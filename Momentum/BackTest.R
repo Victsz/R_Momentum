@@ -1,26 +1,22 @@
 #import data
 path<- 'RawData//399006.csv'
 s<-getHistoryData(path, f ='%Y/%m/%d')
-s<-s['2014-01-27/']
+#s<-s['2014-01-27/']
 s$VOLUME<-NULL
-trend<-Trend(s, r=0.03)
+waves<-generateWave(s, r=0.02)
+curves <- getCurves(waves)
+upCurve <- curves[[1]]
+downCurve <- curves[[2]]
 
-#draw trend
-n<-data.frame(row.names = index(s),trend$value,trend$dire)
-#t<-data.frame(row.names = index(s),trend$trendLine)
-nu<-n[which(n$trend.dire==1),]
-nd<-n[which(n$trend.dire!=1),]
-#td<-t[which(!is.na(t$trend.trendLine)),]
-nu$trend.dire<-NULL
-nd$trend.dire<-NULL
+
 myTheme<-chart_theme()
 myTheme$col$dn.col<-'red'
 myTheme$col$dn.border <- 'red'
 myTheme$col$up.col <- 'lightgray'
 myTheme$col$up.border <- 'lightgray'
 chartSeries(x=s,name='a')
-addTA(nu,on =1, col='yellow', lwd=2)
-addTA(nd,on =1, col='red', lwd=2)
+addTA(upCurve,on =1, col='yellow', lwd=2)
+addTA(downCurve,on =1, col='red', lwd=2)
 
 
 
@@ -55,8 +51,7 @@ bottom<-unique(s[s$dire==1,c('point')])
 #Iteration
 for( i in 1:nrow(s) )
 {
-  # update values for this date
-  
+  # update values for this date  
   CurrentDate <- as.POSIXct(index(s)[i])
   print(CurrentDate)
   equity = getEndEq(myAcct, CurrentDate)

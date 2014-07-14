@@ -5,6 +5,7 @@ require(blotter)
 
 require(quantstrat)
 
+last <- function(x) { tail(x, n = 1) }
 calStep <- function(trend,dire, useClose = F)
 {
   step <- NA
@@ -49,8 +50,6 @@ calStep <- function(trend,dire, useClose = F)
 
 drawTrend <- function (startPoint,trendLine,start,end,dire,step,lineStart = -1) 
 {
-  print('xstep')
-  print(step)
   inL<-length(trendLine)  
   
   if(lineStart <= 0)
@@ -71,6 +70,7 @@ drawTrend <- function (startPoint,trendLine,start,end,dire,step,lineStart = -1)
   trendLine <- replace(x = trendLine, list = nlist, values =  nVal )
   
   outL<-length(trendLine)
+  
   if(inL!=outL)
   {
     print('Ex')
@@ -82,6 +82,160 @@ drawTrend <- function (startPoint,trendLine,start,end,dire,step,lineStart = -1)
   }
   return(trendLine)
   
+}
+
+getFirstWave <- function (cl,hi, lo, length, r) {
+  waveEnd<-0
+  initDire <- 0
+  peak <- hi[1]
+  peakI <- 1
+  bottom <- lo[1]
+  bottomI <- 1
+  for(i in 2:length)
+  {
+    if(hi[i] > peak)
+    {
+      peak <- hi[i]
+      peakI <- i
+    } else if(hi[i] == peak)
+    {
+      peakI <- c(peakI,i)
+    }
+    
+    if(lo[i] < bottom)
+    {
+      bottom <- lo[i]
+      bottomI <- i
+    } else if(lo[i] == bottom)
+    {
+      bottomI <- c(bottomI,i)
+    }
+    if((cl[i] - cl[1]) / cl[1] > r)
+    {
+      initDire <- 1
+      waveEnd <- i      
+      break
+    } else if ( (cl[1] - cl[i]) / cl[1] > r)
+    {
+      initDire <- -1
+      waveEnd <- i
+      break
+    }
+  }
+  
+  firstWave <-list(dire = initDire,waveStart = 1,waveEnd = waveEnd, peak = peak,bottom = bottom, peakI = peakI, bottomI  = bottomI)
+  return(firstWave)
+}
+
+reverseWave <- function(lastWave,curV,r, i)
+  {
+    cl<-coredata(Cl(curV))
+    lo<-coredata(Lo(curV))
+    hi<-coredata(Hi(curV))
+    dropPerc <- (lastWave$peak - cl) /  lastWave$peak
+    risePerc <- (cl - lastWave$bottom ) /  lastWave$bottom    
+    newWave <- NULL
+    if(lastWave$dire == 1 & dropPerc > r)
+    {
+      #new down wave  
+      newWave <-list(dire = -1,waveStart = i,waveEnd = i,peak = hi, bottom = lo, peakI =i, bottomI = i)
+    }
+    
+    if(lastWave$dire == -1 & risePerc > r)
+    {
+      #new up wave  
+      newWave <-list(dire = 1,waveStart = i,waveEnd = i,peak = hi, bottom = lo, peakI =i, bottomI = i)  
+    }
+    
+    return (newWave) 
+  }
+
+generateWave <- function(s,r = 0.001)
+{
+  length <- nrow(s)
+  cl <- coredata(Cl(s))
+  lo <- coredata(Lo(s))
+  hi <- coredata(Hi(s))
+  firstWave <- getFirstWave(cl, hi, lo, length, r)
+  waves <- list(firstWave)
+  iStart <- firstWave$waveEnd + 1
+
+  for(i in iStart : length)
+  {
+    #check for reverse
+    waveCount <- length(waves)
+    lastWave <- last(waves)[[1]]
+    newWave <- reverseWave(lastWave,s[i],r,i)
+   
+    if(!is.null(newWave))
+    {
+      #new wave
+      start <- lastWave$waveStart
+      valueLength <- (i - start + 1)
+      value <- seq(from = cl[start], to= cl[i], length.out =  valueLength)
+      names(value) <- index(s)[start:i]
+      curve <- data.frame(value)
+      lastWave$curve<-curve
+      waves[[waveCount]] <- lastWave
+      waves <- append(waves,list(newWave))
+      next
+    }else{
+      #update current wave
+      lastWave$waveEnd <- i
+      
+      if(lastWave$peak < hi[i])
+      {
+        lastWave$peak <- hi[i]
+        lastWave$peakI <- i
+      } else if(lastWave$peak == hi[i])
+      { 
+        lastWave$peakI <- c(lastWave$peakI,i)
+      }
+      
+      if(lastWave$bottom > lo[i])
+      {
+        lastWave$bottom <- lo[i]
+        lastWave$bottomI <- i
+      } else if(lastWave$bottom == lo[i])
+      { 
+        lastWave$bottomI <- c(lastWave$bottomI,i)
+      }
+      if(i==length)
+      {
+        start <- lastWave$waveStart
+        valueLength <- (i - start + 1)
+        value <- seq(from = cl[start], to= cl[i], length.out =  valueLength)
+        names(value) <- index(s)[start:i]
+        curve <- data.frame(value)
+        lastWave$curve<-curve
+      }
+      waves[[waveCount]] <- lastWave
+    }
+  }  
+  return(waves)
+}
+
+getCurves <- function(waves)
+{
+  upCurve <- NULL
+  downCurve <- NULL
+  
+  length <- length(waves)
+
+  for(i in 1:length)
+  {
+    wave <- waves[[i]]
+    if(wave$dire == 1)
+    {
+      upCurve <- rbind(upCurve,wave$curve)
+      
+    }
+    else
+    {
+      downCurve <- rbind(downCurve,wave$curve)
+    }
+  }
+  return (list(upCurve = upCurve, downCurve = downCurve))
 }
 
 
@@ -141,8 +295,7 @@ function(df,r = 0.001)
       clo<-coredata(cl[i])
       if(coredata(l)< coredata(clo))
       {
-        #reverse
-        
+        #reverse        
         waveDireList<-c(waveDireList,'U')
         if(coredata(lo[i]) <= coredata(bottomList[waveCount]))
         {
@@ -375,10 +528,6 @@ function(df,r = 0.001)
   return (trend)
   
 }
-
-
-
-
 
 getHistoryData<- function(x, f = '%d/%m/%Y %H:%M:%S')
 {

@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1403688938049.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "D3166244",
+    "lastKnownWriteTime" : 3256496388605556070,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "tstats",
+        "contentUrl" : "content?title=tstats&file=ea9ab3c7a83a47689ab5167f0ac46cc5.htm",
+        "displayedObservations" : "1",
+        "displayedVariables" : 31,
+        "totalObservations" : "1",
+        "variables" : "30"
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

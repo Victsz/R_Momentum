@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1404726282883.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "B2121130",
+    "lastKnownWriteTime" : 13229740524830817,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "lastBottom",
+        "contentUrl" : "content?title=lastBottom&file=cd9a8962b18f46998c1710ab4ec23407.htm",
+        "displayedObservations" : 1,
+        "displayedVariables" : 1,
+        "totalObservations" : 1,
+        "variables" : 1
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

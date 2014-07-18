@@ -31,7 +31,7 @@ getTrendLine <- function(trends,s)
   names(downTrendLine) <- index(s)
   downTrendLine<-downTrendLine[!is.na(downTrendLine)]
   names(dashLine) <- index(s)
-  downTrendLine<-dashLine[!is.na(dashLine)]
+  dashLine<-dashLine[!is.na(dashLine)]
   return (list(upTrendLine,downTrendLine,dashLine))
 }
 

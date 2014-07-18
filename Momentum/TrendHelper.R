@@ -2,6 +2,7 @@ getTrendLine <- function(trends,s)
 { 
   upTrendLine<- rep(NA, nrow(s))
   downTrendLine<- rep(NA, nrow(s))
+  dashLine<- rep(NA, nrow(s))
   lastEnd <- 0
   trendCount <- nrow(trends)
   for(t in 1 : trendCount)
@@ -17,19 +18,21 @@ getTrendLine <- function(trends,s)
     breakPoint <- trend$breakPoint
     step <- trend$step
     if(dire==1){
-      upTrendLine<-calTrendValue(startPoint = s[start], trendLine = upTrendLine,start = start, end = end,dire = dire,step = step, lineStart = breakPoint)
+      upTrendLine<-calTrendValue(startPoint = s[start], trendLine = upTrendLine,start = start, end = end,dire = dire,step = step)
     }else
     {
-      downTrendLine<-calTrendValue(startPoint = s[start], trendLine = downTrendLine,start = start, end = end,dire = dire,step = step, lineStart = breakPoint)
+      downTrendLine<-calTrendValue(startPoint = s[start], trendLine = downTrendLine,start = start, end = end,dire = dire,step = step)
     }
+    dashLine <-calTrendValue(startPoint = s[start], trendLine = dashLine,start = start, end = breakPoint -1 ,dire = dire,step = step)
   }
   # connect from breakpoint to end
   names(upTrendLine) <- index(s)
   upTrendLine<-upTrendLine[!is.na(upTrendLine)]
   names(downTrendLine) <- index(s)
   downTrendLine<-downTrendLine[!is.na(downTrendLine)]
-  
-  return (list(upTrendLine,downTrendLine))
+  names(dashLine) <- index(s)
+  downTrendLine<-dashLine[!is.na(dashLine)]
+  return (list(upTrendLine,downTrendLine,dashLine))
 }
 
 calTrendValue <- function (startPoint,trendLine,start,end,dire,step,lineStart = -1) 

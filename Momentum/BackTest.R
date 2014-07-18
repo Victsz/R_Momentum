@@ -1,5 +1,5 @@
 #import data
-path<- 'RawData//399006.csv'
+path<- 'RawData//000001.csv'
 s<-getHistoryData(path, f ='%Y/%m/%d')
 
 s$VOLUME<-NULL
@@ -16,8 +16,8 @@ myTheme$col$dn.border <- 'red'
 myTheme$col$up.col <- 'lightgray'
 myTheme$col$up.border <- 'lightgray'
 chartSeries(x=s,name='a')
-addTA(upCurve,on =1, col='yellow', lwd=2)
-addTA(downCurve,on =1, col='red', lwd=2)
+# addTA(upCurve,on =1, col='yellow', lwd=2)
+# addTA(downCurve,on =1, col='red', lwd=2)
 
 
 trends <- generateTrends(s,waves = waves, r=0.01/2)
@@ -25,7 +25,7 @@ trends <- generateTrends(s,waves = waves, r=0.01/2)
 trendLine <- getTrendLine(trends,s) 
 addTA(trendLine[[1]],on =1, col=512, lwd=2)
 addTA(trendLine[[2]],on =1, col=350, lwd=2)
-
+addTA(trendLine[[3]],on =1, col=450, lwd=2)
 
 
 

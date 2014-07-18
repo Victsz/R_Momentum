@@ -3,9 +3,9 @@ path<- 'RawData//399006.csv'
 s<-getHistoryData(path, f ='%Y/%m/%d')
 
 s$VOLUME<-NULL
-waves<-generateWave(s, r=0.015)
+waves<-generateWaves(s, r=0.015)
 
-curves <- getCurves(waves)
+curves <- getWaveCurve(waves)
 upCurve <- curves[[1]]
 downCurve <- curves[[2]]
 

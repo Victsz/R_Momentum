@@ -5,7 +5,47 @@ require(blotter)
 
 require(quantstrat)
 
-last <- function(x) { tail(x, n = 1) }
+checkIsSell <- function(posn,cl,curDate,trends,i)
+{
+  for(t in 1 : nrow(trends) )
+  {
+    trend <- trends[t,]
+    start <- trend$start
+    end <- trend$end
+    breakPoint <- trend$breakPoint
+    if(trend$dire != 1){next}
+    if(i == end)
+    {return (T)}
+    if(i<start){return (F)}
+  }
+  return (F)
+}
+
+checkIsBuy <- function(cl,curDate,trends,i)
+{
+#   isBuy <- F
+  for(t in 1 : nrow(trends) )
+  {
+    trend <- trends[t,]
+    start <- trend$start
+    end <- trend$end
+    breakPoint <- trend$breakPoint
+    if(trend$dire != 1){next}
+    if(i>=breakPoint & i < end)
+    {return (T)}
+    if(i < start){return (F)}
+  }
+#   lineVal <- upLine[as.character.Date(curDate)]
+#   if(!is.na(lineVal) &  cl > lineVal)
+#   { 
+#     isBuy <- T
+#   }
+#   
+#   return (isBuy)   
+}
+
+
+getLast <- function(x) { tail(x, n = 1) }
 
 getHistoryData<- function(x, f = '%d/%m/%Y %H:%M:%S')
 {
@@ -55,7 +95,7 @@ getHistoryData<- function(x, f = '%d/%m/%Y %H:%M:%S')
 #   bottomList<-c(lo[1],bottomList)
 #   peakList<-c(hi[1],peakList)
 #   trendStartIndex <- 1
-#   for(i in 2:length(cl))
+#   for(i in 2:(cl))
 #   { 
 #     isReverse <- F 
 #     if(dire[i-1] == -1)
@@ -182,7 +222,7 @@ getHistoryData<- function(x, f = '%d/%m/%Y %H:%M:%S')
 #         }
 #       
 #         waveCount <- waveCount + 1
-#                         
+#                         length
 #         isReverse <- T
 #         dire[i] = -1
 #         point[i] = i

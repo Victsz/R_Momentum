@@ -32,7 +32,7 @@ getTrendLine <- function(trends,s)
   downTrendLine<-downTrendLine[!is.na(downTrendLine)]
   names(dashLine) <- index(s)
   dashLine<-dashLine[!is.na(dashLine)]
-  return (list(upTrendLine,downTrendLine,dashLine))
+  return (list(up = upTrendLine,down = downTrendLine,dash = dashLine))
 }
 
 calTrendValue <- function (startPoint,trendLine,start,end,dire,step,lineStart = -1) 
@@ -228,7 +228,7 @@ generateTrends <- function(s,waves,r = 0.001)
   for(i in firstTrend$breakPoint : length)
   {
     cl <- coredata(Cl(s[i]))
-    lastTrend <- last(trends)
+    lastTrend <- getLast(trends)
     trendCount <- nrow(trends)
     curWave <- waves[[w]]
     if(!is.na(lastTrend$end))

@@ -78,7 +78,7 @@ generateWaves <- function(s,r = 0.001)
   {
     #check for reverse
     waveCount <- length(waves)
-    lastWave <- last(waves)[[1]]
+    lastWave <- getLast(waves)[[1]]
     newWave <- findReverseWave(lastWave,s[i],r,i)
     
     if(!is.null(newWave))

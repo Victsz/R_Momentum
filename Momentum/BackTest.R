@@ -1,5 +1,5 @@
 #import data
-path<- 'RawData//399006.csv'
+path<- 'RawData//000001.csv'
 s<-getHistoryData(path, f ='%Y/%m/%d')
 #s<-s[100:200,]
 s$VOLUME<-NULL

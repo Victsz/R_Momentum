@@ -35,6 +35,7 @@ checkIsBuy <- function(cl,curDate,trends,i)
     {return (T)}
     if(i < start){return (F)}
   }
+{return (F)}
 #   lineVal <- upLine[as.character.Date(curDate)]
 #   if(!is.na(lineVal) &  cl > lineVal)
 #   { 

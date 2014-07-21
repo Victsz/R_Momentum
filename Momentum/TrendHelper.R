@@ -70,7 +70,7 @@ calTrendValue <- function (startPoint,trendLine,start,end,dire,step,lineStart = 
   
 }
 
-findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastDire)
+findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastDire, initStart)
 { 
   newTrend <- NULL
   breakPoint <- i
@@ -106,6 +106,9 @@ findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastDire)
       {
         start <- prevWave2$bottomI[1]
       }
+    }else
+    {
+      start <- initStart
     }
   }else if(cl < (1-r) * min(prevWave1$bottom, prevWave2$bottom))
   {
@@ -125,6 +128,9 @@ findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastDire)
       {
         start <- prevWave2$peakI[1]
       }
+    }else
+    {
+      start <- initStart
     }
   }
   
@@ -236,9 +242,9 @@ generateTrends <- function(s,waves,r = 0.001)
       #last Trend ended
       prevWave1 <- waves[[w-1]]
       prevWave2 <- waves[[w-2]]
-      
+      lastInitStart <- trends$start[max(which(x = trends$type=='Init'))]
       lastDire <- lastTrend$dire
-      newTrend <- findNewTrend(curWave=curWave,prevWave1 =  prevWave1,prevWave2 =  prevWave2,s =  s,r = r,i = i,lastDire = lastDire)
+      newTrend <- findNewTrend(curWave=curWave,prevWave1 =  prevWave1,prevWave2 =  prevWave2,s =  s,r = r,i = i,lastDire = lastDire,initStart = lastInitStart)
       if(!is.null(newTrend))
       {
         trends <- rbind(trends,newTrend)

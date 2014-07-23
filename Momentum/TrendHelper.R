@@ -431,7 +431,42 @@ TrendLine <- function(mkt, r)
 {
   waves<-generateWaves(mkt = mkt, r=0.015)
   trends <- generateTrends(mkt = mkt,waves = waves, r=0.01/2)
-  trendLine <- TrendLineIndicator(trends,mkt) 
+  trendLine <- TrendPointIndicator(trends,nrow(mkt))
   trendLine <- xts(x = trendLine,index(s))  
+  print(trendLine)
   return (trendLine)
+}
+
+
+TrendPointIndicator <- function(trends, dLength)
+{
+  print(dLength)
+  longPoint <-  rep(0, dLength)
+  shortPoint <-  rep(0, dLength)
+  trendCount <- nrow(trends)
+  for(t in 1 : trendCount)
+  {
+    trend <- trends[t,]
+    dire <- trend$dire 
+    end <- trend$end
+    if(is.na(end))
+    {
+      end <- nrow(mkt)
+    }
+    breakPoint <- trend$breakPoint
+    print(breakPoint)
+    print(end)
+    if(dire==1)
+    {
+      longPoint[breakPoint] <- 1
+      longPoint[end] <- -1
+    }else
+    {
+      shortPoint[breakPoint] <- 1
+      shortPoint[end] <- -1
+    }
+  }
+  out <- cbind(longPoint, shortPoint)
+  colnames(out) <- c("longSig", "shortSig")
+  return (out)
 }

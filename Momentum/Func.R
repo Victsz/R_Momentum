@@ -50,16 +50,33 @@ checkIsBuy <- function(cl,curDate,trends,i)
 orderSize <- function(data, timestamp, orderqty, ordertype, orderside, portfolio, symbol,
                       ruletype, ...)
 {
-  posn <- getPosQty(Portfolio = portfolio, Symbol=Symbol, Date=timestamp)
-  if(!is.na(posn) & posn>0)
-  { 
-    return(0)
-  }
-  else
+  if(orderside == 'long')
   {
-    
-    return (10000/as.numeric(Cl(data[timestamp])))
-  } 
+    posn <- getPosQty(Portfolio = portfolio, Symbol=Symbol, Date=timestamp)
+    if(!is.na(posn) & posn>0)
+    { 
+      return(0)
+    }
+    else
+    {
+      
+      return (10000/as.numeric(Cl(data[timestamp])))
+    } 
+  }else
+  {
+    posn <- getPosQty(Portfolio = portfolio, Symbol=Symbol, Date=timestamp)
+    print(posn)
+    if(!is.na(posn) & posn>0)
+    { 
+      return(0)
+    }
+    else
+    {
+      
+      return (10000/as.numeric(Cl(data[timestamp])))
+    } 
+  }
+
 }
 getLast <- function(x) { tail(x, n = 1) }
 

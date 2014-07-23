@@ -42,21 +42,39 @@ summary(strat)
 add.indicator(strategy = myStrgy,name = 'TrendLine',arguments = list(mkt = s, r = 0.015))
 
 
-add.signal(strategy = myStrgy, name="sigComparison", 
-           arguments=list(columns=c('Close','up.TrendLine.ind'), relationship="gte"),
+add.signal(strategy = myStrgy, name="sigThreshold", 
+           arguments=list(threshold = 1, column='longSig.TrendLine.ind', relationship="eq"),
            label="longEntry")
-add.signal(strategy = myStrgy, name="sigComparison", 
-           arguments=list( columns=c('Close','up.TrendLine.ind'), relationship="lt"),
+add.signal(strategy = myStrgy, name="sigThreshold", 
+           arguments=list(threshold = -1, column='longSig.TrendLine.ind', relationship="eq"),
            label="longExit")
+
+add.signal(strategy = myStrgy, name="sigThreshold", 
+           arguments=list(threshold = 1, column='shortSig.TrendLine.ind', relationship="eq"),
+           label="shortEntry")
+add.signal(strategy = myStrgy, name="sigThreshold", 
+           arguments=list(threshold = -1, column='shortSig.TrendLine.ind', relationship="eq"),
+           label="shortExit")
+
 
 add.rule(strategy = myStrgy , name="ruleSignal", 
          arguments=list(sigcol="longEntry", sigval=TRUE, orderqty='', 
-                        ordertype="market", orderside="long", replace=FALSE, prefer="Open", osFUN = 'orderSize', TxnFees = txnFees), 
+                        ordertype="market", orderside="long", replace=FALSE, prefer="Open", osFUN = 'orderSize', TxnFees = -txnFees), 
          type="enter", path.dep=TRUE)
 
 add.rule(strategy = myStrgy, name="ruleSignal", 
          arguments=list(sigcol="longExit", sigval=TRUE, orderqty="all", 
                         ordertype="market", orderside="long", replace=FALSE, prefer="Open"), 
+         type="exit", path.dep=TRUE)
+
+add.rule(strategy = myStrgy , name="ruleSignal", 
+         arguments=list(sigcol="shortEntry", sigval=TRUE, orderqty='', 
+                        ordertype="market", orderside="short", replace=FALSE, prefer="Open", osFUN = 'orderSize', TxnFees = -txnFees), 
+         type="enter", path.dep=TRUE)
+
+add.rule(strategy = myStrgy, name="ruleSignal", 
+         arguments=list(sigcol="shortExit", sigval=TRUE, orderqty="all", 
+                        ordertype="market", orderside="short", replace=FALSE, prefer="Open"), 
          type="exit", path.dep=TRUE)
 
 addPosLimit(portfolio = myPort,symbol = Symbol,maxpos = 5, timestamp = startDate)
@@ -69,4 +87,5 @@ updatePortf(myPort)
 updateAcct(myAcct)
 updateEndEq(myAcct)  
 chart.Posn(myPort,Symbol,theme=myTheme)
-ts2<-cbind(getTxns(Portfolio=myPort, Symbol=Symbol))
+ts2<-getTxns(Portfolio=myPort, Symbol=Symbol)
+View(ts2)

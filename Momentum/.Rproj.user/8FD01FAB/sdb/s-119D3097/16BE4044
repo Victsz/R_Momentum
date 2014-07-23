@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1406100986261.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "16BE4044",
+    "lastKnownWriteTime" : 28429479460798578,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "ts2",
+        "contentUrl" : "content?title=ts2&file=c3b6d5c2519e4b76bdd630bcf9c8343e.htm",
+        "displayedObservations" : "33",
+        "displayedVariables" : 7,
+        "totalObservations" : "33",
+        "variables" : "6"
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

@@ -15,7 +15,9 @@ checkIsSell <- function(posn,cl,curDate,trends,i)
     breakPoint <- trend$breakPoint
     if(trend$dire != 1){next}
     if(i == end)
-    {return (T)}
+    {      
+      return (T)
+    }
     if(i<start){return (F)}
   }
   return (F)
@@ -45,7 +47,20 @@ checkIsBuy <- function(cl,curDate,trends,i)
 #   return (isBuy)   
 }
 
-
+orderSize <- function(data, timestamp, orderqty, ordertype, orderside, portfolio, symbol,
+                      ruletype, ...)
+{
+  posn <- getPosQty(Portfolio = portfolio, Symbol=Symbol, Date=timestamp)
+  if(!is.na(posn) & posn>0)
+  { 
+    return(0)
+  }
+  else
+  {
+    
+    return (10000/as.numeric(Cl(data[timestamp])))
+  } 
+}
 getLast <- function(x) { tail(x, n = 1) }
 
 getHistoryData<- function(x, f = '%d/%m/%Y %H:%M:%S')

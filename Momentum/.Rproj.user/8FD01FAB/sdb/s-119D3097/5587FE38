@@ -1,0 +1,17 @@
+{
+    "contents" : "require(PerformanceAnalytics)\n#import data\npath<- 'RawData//002010.csv'\ns<-getHistoryData(path, f ='%Y/%m/%d')\n#s<-s[100:200,]\ns$VOLUME<-NULL\ntxnFees <- 100\n\n#init portfolio\nrequire(blotter)\nSymbol<-'s'\nCNY <- 'CNY'\ncurrency(CNY)\nget(CNY,envir=FinancialInstrument:::.instrument)\nstock(primary_id = Symbol, currency = CNY, multiplier=1) \nget(Symbol,envir=FinancialInstrument:::.instrument)\n\nSys.setenv(TZ = 'UTC')\nstartDate <- '2001-01-01'\n\nif (!exists('.blotter')) .blotter <- new.env()\nrm(list=ls(envir=.blotter),envir=.blotter)\nmyAcct<-'myAcct'\nmyPort<-'myPortfolio'\ninitPortf(name=myPort,symbols=Symbol, initDate=startDate,currency=CNY)\ninitAcct(name= myAcct,portfolios=myPort,initDate=startDate,currency=CNY,initEq=10000)\n\n\nrequire(quantstrat)\nif (!exists('.strategy')) .strategy <- new.env()\nrm(list=ls(envir=.strategy),envir=.strategy)\nmyStrgy <- 'trendLine'\nrm.strat(myStrgy)\n\ninitOrders(portfolio = myPort,symbols = Symbol,initDate = startDate)\n\nstrategy(name = myStrgy,store = T)\n\nls(.strategy)\nstrat <-getStrategy(myStrgy)\nsummary(strat)\nadd.indicator(strategy = myStrgy,name = 'TrendLine',arguments = list(mkt = s, r = 0.015))\n\n\nadd.signal(strategy = myStrgy, name=\"sigComparison\", \n           arguments=list(columns=c('Close','up.TrendLine.ind'), relationship=\"gte\"),\n           label=\"longEntry\")\nadd.signal(strategy = myStrgy, name=\"sigComparison\", \n           arguments=list( columns=c('Close','up.TrendLine.ind'), relationship=\"lt\"),\n           label=\"longExit\")\n\nadd.rule(strategy = myStrgy , name=\"ruleSignal\", \n         arguments=list(sigcol=\"longEntry\", sigval=TRUE, orderqty='', \n                        ordertype=\"market\", orderside=\"long\", replace=FALSE, prefer=\"Open\", osFUN = 'orderSize', TxnFees = txnFees), \n         type=\"enter\", path.dep=TRUE)\n\nadd.rule(strategy = myStrgy, name=\"ruleSignal\", \n         arguments=list(sigcol=\"longExit\", sigval=TRUE, orderqty=\"all\", \n                        ordertype=\"market\", orderside=\"long\", replace=FALSE, prefer=\"Open\"), \n         type=\"exit\", path.dep=TRUE)\n\naddPosLimit(portfolio = myPort,symbol = Symbol,maxpos = 5, timestamp = startDate)\n\nt1 <- Sys.time()\nout <- applyStrategy(strategy=myStrgy,portfolios=myPort, verbose=T)\nt2 <- Sys.time()\nprint(t2-t1)\nupdatePortf(myPort)\nupdateAcct(myAcct)\nupdateEndEq(myAcct)  \nchart.Posn(myPort,Symbol,theme=myTheme)\nts2<-cbind(getTxns(Portfolio=myPort, Symbol=Symbol))",
+    "created" : 1406084314430.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "64581372",
+    "id" : "5587FE38",
+    "lastKnownWriteTime" : 1406103400,
+    "path" : "C:/Users/Legend/SkyDrive/GitHub/R_Momentum/Momentum/applyStrategy.R",
+    "project_path" : "applyStrategy.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "source_on_save" : false,
+    "type" : "r_source"
+}

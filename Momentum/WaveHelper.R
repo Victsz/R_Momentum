@@ -64,12 +64,12 @@ findReverseWave <- function(lastWave,curV,r, i)
   return (newWave) 
 }
 
-generateWaves <- function(s,r = 0.001)
+generateWaves <- function(mkt,r = 0.001)
 {
-  length <- nrow(s)
-  cl <- coredata(Cl(s))
-  lo <- coredata(Lo(s))
-  hi <- coredata(Hi(s))
+  length <- nrow(mkt)
+  cl <- coredata(Cl(mkt))
+  lo <- coredata(Lo(mkt))
+  hi <- coredata(Hi(mkt))
   firstWave <- getFirstWave(cl, hi, lo, length, r)
   waves <- list(firstWave)
   iStart <- firstWave$waveEnd + 1
@@ -79,7 +79,7 @@ generateWaves <- function(s,r = 0.001)
     #check for reverse
     waveCount <- length(waves)
     lastWave <- getLast(waves)[[1]]
-    newWave <- findReverseWave(lastWave,s[i],r,i)
+    newWave <- findReverseWave(lastWave,mkt[i],r,i)
     
     if(!is.null(newWave))
     {
@@ -88,7 +88,7 @@ generateWaves <- function(s,r = 0.001)
       start <- lastWave$waveStart
       valueLength <- (i - start + 1)
       value <- seq(from = cl[start], to= cl[i], length.out =  valueLength)
-      names(value) <- index(s)[start:i]
+      names(value) <- index(mkt)[start:i]
       curve <- data.frame(value)
       lastWave$curve<-curve
       waves[[waveCount]] <- lastWave
@@ -123,7 +123,7 @@ generateWaves <- function(s,r = 0.001)
         start <- lastWave$waveStart
         valueLength <- (i - start + 1)
         value <- seq(from = cl[start], to= cl[i], length.out =  valueLength)
-        names(value) <- index(s)[start:i]
+        names(value) <- index(mkt)[start:i]
         curve <- data.frame(value)
         lastWave$curve<-curve
       }

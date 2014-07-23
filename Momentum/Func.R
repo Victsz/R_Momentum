@@ -66,7 +66,7 @@ orderSize <- function(data, timestamp, orderqty, ordertype, orderside, portfolio
   {
     posn <- getPosQty(Portfolio = portfolio, Symbol=Symbol, Date=timestamp)
     print(posn)
-    if(!is.na(posn) & posn>0)
+    if(!is.na(posn) & posn<0)
     { 
       return(0)
     }

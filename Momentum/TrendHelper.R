@@ -1,6 +1,7 @@
-getTrendLine <- function(trends,mkt)
+getTrendLine <- function(trends,mkt, range = 0.1)
 { 
   upTrendLine<- rep(NA, nrow(mkt))
+   
   downTrendLine<- rep(NA, nrow(mkt))
   dashLine<- rep(NA, nrow(mkt))
   lastEnd <- 0
@@ -25,14 +26,25 @@ getTrendLine <- function(trends,mkt)
     }
     dashLine <-calTrendValue(startPoint = mkt[start], trendLine = dashLine,start = start, end = breakPoint -1 ,dire = dire,step = step)
   }
+  
+  upLimit <- upTrendLine * (1+ range)
+  downLimit <- downTrendLine *(1- range) 
   # connect from breakpoint to end
   names(upTrendLine) <- index(mkt)
   upTrendLine<-upTrendLine[!is.na(upTrendLine)]
+  
   names(downTrendLine) <- index(mkt)
   downTrendLine<-downTrendLine[!is.na(downTrendLine)]
+  
   names(dashLine) <- index(mkt)
   dashLine<-dashLine[!is.na(dashLine)]
-  return (list(up = upTrendLine,down = downTrendLine,dash = dashLine))
+  
+  names(upLimit) <- index(mkt)
+  upLimit<-upLimit[!is.na(upLimit)]
+  
+  names(downLimit) <- index(mkt)
+  downLimit<-downLimit[!is.na(downLimit)]
+  return (list(up = upTrendLine,down = downTrendLine,dash = dashLine, upL = upLimit, downL = downLimit))
 }
 
 calTrendValue <- function (startPoint,trendLine,start,end,dire,step,lineStart = -1) 
@@ -70,7 +82,7 @@ calTrendValue <- function (startPoint,trendLine,start,end,dire,step,lineStart = 
   
 }
 
-findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastDire, initStart)
+findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastTrend, initStart)
 { 
   newTrend <- NULL
   breakPoint <- i
@@ -85,7 +97,7 @@ findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastDire, initStart)
   curWaveStart <- curWave$waveStart
   curWaveEnd <- curWave$waveEnd
   waveEnd <- 0
-  
+  lastDire <- lastTrend$dire
   
   if(cl > (1 +r) * max(prevWave1$peak, prevWave2$peak))
   {
@@ -106,8 +118,9 @@ findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastDire, initStart)
       {
         start <- prevWave2$bottomI[1]
       }
-    }else
+    }else if(type == 'Extend')
     {
+     
       start <- initStart
     }
   }else if(cl < (1-r) * min(prevWave1$bottom, prevWave2$bottom))
@@ -128,8 +141,9 @@ findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastDire, initStart)
       {
         start <- prevWave2$peakI[1]
       }
-    }else
+    }else  if(type == 'Extend')
     {
+      
       start <- initStart
     }
   }
@@ -140,7 +154,7 @@ findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastDire, initStart)
     step <- 0
     start <- start - 1 
     
-    while (abs(step) < r * cl )
+    while (abs(step) < 0.4 * r * cl )
     {      
       start <- start +1
       if(start>= breakPoint)
@@ -150,7 +164,23 @@ findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastDire, initStart)
       step <- calTrendStep(trend = s[start:breakPoint], dire = dire)  
    
     }
-    
+    if(start != initStart)
+    {
+      type <- 'Init'
+    } else
+    {
+      if(dire == -1 & cl >= (1-r) *  lastTrend$extrema)
+      {
+        return (newTrend)
+      }
+      
+      #check if it is valid extend.
+      if(dire == 1 & cl <= (1 +r) *  lastTrend$extrema)
+      {
+        return (newTrend)
+      } 
+    }
+   
     newTrend <- data.frame(dire, start,end, breakPoint, step, type, extrema = extrema) 
   }
   
@@ -243,8 +273,7 @@ generateTrends <- function(mkt,waves,r = 0.001)
       prevWave1 <- waves[[w-1]]
       prevWave2 <- waves[[w-2]]
       lastInitStart <- trends$start[max(which(x = trends$type=='Init'))]
-      lastDire <- lastTrend$dire
-      newTrend <- findNewTrend(curWave=curWave,prevWave1 =  prevWave1,prevWave2 =  prevWave2,s =  s,r = r,i = i,lastDire = lastDire,initStart = lastInitStart)
+      newTrend <- findNewTrend(curWave=curWave,prevWave1 =  prevWave1,prevWave2 =  prevWave2,s =  s,r = r,i = i,lastTrend = lastTrend,initStart = lastInitStart)
       if(!is.null(newTrend))
       {
         trends <- rbind(trends,newTrend)
@@ -388,9 +417,81 @@ calTrendStep <- function(trend,dire, useClose = F)
   return(step)
 }
 
-TrendLineIndicator <- function(trends,mkt)
+
+
+TrendPoint <- function(mkt, r)
+{
+  waves<-generateWaves(mkt = mkt, r=r)
+  trends <- generateTrends(mkt = mkt,waves = waves, r=r/2)
+  trendPoint <- TrendPointIndicator(trends,nrow(mkt))
+  trendPoint <- xts(x = trendPoint,index(mkt))   
+  return (trendPoint)
+}
+
+
+TrendPointIndicator <- function(trends, dLength)
 { 
-  upTrendLine<- rep(9999, nrow(mkt))
+  longPoint <-  rep(0, dLength)
+  longInitPoint <-  rep(0, dLength)
+  shortPoint <-  rep(0, dLength)
+  shortInitPoint <-  rep(0, dLength)
+  trendCount <- nrow(trends)
+  for(t in 1 : trendCount)
+  {
+    trend <- trends[t,]
+    dire <- trend$dire 
+    end <- trend$end
+    if(is.na(end))
+    {
+      end <- dLength
+    }
+    breakPoint <- trend$breakPoint
+    print(breakPoint)
+    print(end)
+    if(dire==1)
+    {
+      
+      if(trend$type == 'Init')
+      {
+        longInitPoint[breakPoint-1] <- 1
+        longInitPoint[end-1] <- -1
+      }else
+      {
+        longPoint[breakPoint-1] <- 1
+        longPoint[end-1] <- -1
+      }
+    }else
+    {
+      
+      if(trend$type == 'Init')
+      {
+        shortInitPoint[breakPoint-1] <- 1
+        shortInitPoint[end-1] <- -1
+      }else
+      {
+        shortPoint[breakPoint-1] <- 1
+        shortPoint[end-1] <- -1
+      }
+    }
+  }
+  out <- cbind(longPoint, shortPoint,longInitPoint,shortInitPoint)
+  colnames(out) <- c("longSig", "shortSig","longInitSig","shortInitSig")
+  print(out)
+  return (out)
+}
+
+TrendLine <- function(mkt, r=0.02)
+{
+  waves<-generateWaves(mkt = mkt, r=r)
+  trends <- generateTrends(mkt = mkt,waves = waves, r=r)
+  trendLine <- TrendLineIndicator(trends,mkt)
+  trendLine <- xts(x = trendLine,index(mkt))   
+  return (trendLine)
+}
+
+TrendLineIndicator <- function(trends,mkt,range = 0.05)
+{ 
+  upTrendLine<- rep(NA, nrow(mkt))
   downTrendLine<- rep(NA, nrow(mkt))
   dashLine<- rep(NA, nrow(mkt))
   lastEnd <- 0
@@ -418,55 +519,11 @@ TrendLineIndicator <- function(trends,mkt)
   # connect from breakpoint to end
   #names(upTrendLine) <- index(mkt)
   #upTrendLine<-upTrendLine[!is.na(upTrendLine)]
-#  names(downTrendLine) <- index(mkt)
-#  downTrendLine<-downTrendLine[!is.na(downTrendLine)]
- # names(dashLine) <- index(mkt)
-#  dashLine<-dashLine[!is.na(dashLine)]
-  out <- cbind(upTrendLine, downTrendLine)
-  colnames(out) <- c("up", "down")
-  return (out)
-}
-
-TrendLine <- function(mkt, r)
-{
-  waves<-generateWaves(mkt = mkt, r=0.015)
-  trends <- generateTrends(mkt = mkt,waves = waves, r=0.01/2)
-  trendLine <- TrendPointIndicator(trends,nrow(mkt))
-  trendLine <- xts(x = trendLine,index(s))  
-  print(trendLine)
-  return (trendLine)
-}
-
-
-TrendPointIndicator <- function(trends, dLength)
-{
-  print(dLength)
-  longPoint <-  rep(0, dLength)
-  shortPoint <-  rep(0, dLength)
-  trendCount <- nrow(trends)
-  for(t in 1 : trendCount)
-  {
-    trend <- trends[t,]
-    dire <- trend$dire 
-    end <- trend$end
-    if(is.na(end))
-    {
-      end <- nrow(mkt)
-    }
-    breakPoint <- trend$breakPoint
-    print(breakPoint)
-    print(end)
-    if(dire==1)
-    {
-      longPoint[breakPoint] <- 1
-      longPoint[end] <- -1
-    }else
-    {
-      shortPoint[breakPoint] <- 1
-      shortPoint[end] <- -1
-    }
-  }
-  out <- cbind(longPoint, shortPoint)
-  colnames(out) <- c("longSig", "shortSig")
+  #  names(downTrendLine) <- index(mkt)
+  #  downTrendLine<-downTrendLine[!is.na(downTrendLine)]
+  # names(dashLine) <- index(mkt)
+  #  dashLine<-dashLine[!is.na(dashLine)]
+  out <- cbind(upTrendLine, downTrendLine,upTrendLine*(1+range),downTrendLine*(1-range),upTrendLine*(1+0.02))
+  colnames(out) <- c("up", "down",'upL','downL','nearUp')
   return (out)
 }

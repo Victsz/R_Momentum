@@ -1,12 +1,12 @@
 require(PerformanceAnalytics)
 #import data
-path<- 'RawData//002010.csv'
+path<- 'RawData//399006.csv'
 s<-getHistoryData(path, f ='%Y/%m/%d')
-#s<-s[100:200,]
+s<-s[100:400,]
 s$VOLUME<-NULL
-waves<-generateWaves(s, r=0.015)
-trends <- generateTrends(s,waves = waves, r=0.01/2)
-trendLine <- getTrendLine(trends,s) 
+waves<-generateWaves(s, r=0.02)
+trends <- generateTrends(s,waves = waves, r=0.01)
+trendLine <- getTrendLine(trends,s,range = 0.05) 
 isDraw <- F
 if(isDraw){
 curves <- getWaveCurve(waves)
@@ -77,12 +77,12 @@ for( i in 2:nrow(s) )
   if(isSell & !is.null(nextDate))
   {
     addTxn(myPort, Symbol=Symbol, TxnDate=nextDate,
-           TxnPrice=nextOp, TxnQty = -posn , TxnFees= -cl*posn*txnFeesR) 
+           TxnPrice=nextOp, TxnQty = -posn , TxnFees= -100) 
   }
   if(posn <= 0 & isBuy & !is.null(nextDate))
   {
      addTxn(myPort, Symbol=Symbol, TxnDate=nextDate,
-           TxnPrice=nextOp, TxnQty = 5 , TxnFees=0) 
+           TxnPrice=nextOp, TxnQty = as.integer(equity/cl) , TxnFees=0) 
   } 
 #   updatePortf(myPort,Dates = curDate)
 #   updateAcct(myAcct, Dates = curDate)

@@ -1,21 +1,21 @@
 require(PerformanceAnalytics)
 #import data
-path<- 'RawData//399006.csv'
-s<-getHistoryData(path, f ='%Y/%m/%d')
-s<-s[100:400,]
+path<- 'RawData//IFB.csv'
+formate = '%m/%d/%Y %H:%M'
+# s<-getHistoryData(path, f ='%Y/%m/%d')
+s<-getHistoryData(path, f =formate)
+
 s$VOLUME<-NULL
-waves<-generateWaves(s, r=0.02)
-trends <- generateTrends(s,waves = waves, r=0.01)
-trendLine <- getTrendLine(trends,s,range = 0.05) 
+waves<-generateWaves(s, r=0.0015)
+trends <- generateTrends(s,waves = waves, r=0.001)
+trendLine <- getTrendLine(trends,s,range = 0.005) 
 isDraw <- F
 if(isDraw){
+
+
 curves <- getWaveCurve(waves)
 upCurve <- curves[[1]]
 downCurve <- curves[[2]]
-
-trends$startDate <- index(s)[trends$start]
-trends$breakDate <- index(s)[trends$breakPoint]
-trends$endDate <- index(s)[trends$end]
 
 myTheme<-chart_theme()
 myTheme$col$dn.col<-'red'
@@ -30,6 +30,10 @@ addTA(trendLine$up,on =1, col='cyan', lwd=2)
 addTA(trendLine$down,on =1, col='coral', lwd=2)
 addTA(trendLine$dash,on =1, col='beige', lwd=2)
 }
+
+trends$startDate <- index(s)[trends$start]
+trends$breakDate <- index(s)[trends$breakPoint]
+trends$endDate <- index(s)[trends$end]
 
 #init portfolio
 require(blotter)

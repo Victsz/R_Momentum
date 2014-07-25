@@ -1,6 +1,6 @@
 require(PerformanceAnalytics)
 #import data
-path<- 'RawData//002010.csv'
+path<- 'RawData//399006.csv'
 s<-getHistoryData(path, f ='%Y/%m/%d')
 s<-s[100:400,]
 s$VOLUME<-NULL

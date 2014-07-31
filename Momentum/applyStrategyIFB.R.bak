@@ -1,0 +1,136 @@
+require(PerformanceAnalytics)
+
+isDraw <- T
+range <- 0.0015
+r <- 0.0015
+
+
+#import data
+path<- 'RawData//IFB1407.csv'
+formate = '%d/%m/%Y %H:%M'
+# s<-getHistoryData(path, f ='%Y/%m/%d')
+s<-getHistoryData(path, f =formate)
+s<-s[1:200,]
+txnFees <- 19
+
+#init portfolio
+require(blotter)
+Symbol<-'s'
+CNY <- 'CNY'
+currency(CNY)
+get(CNY,envir=FinancialInstrument:::.instrument)
+stock(primary_id = Symbol, currency = CNY, multiplier=7.7) 
+get(Symbol,envir=FinancialInstrument:::.instrument)
+
+Sys.setenv(TZ = 'UTC')
+startDate <- '2001-01-01'
+
+if (!exists('.blotter')) .blotter <- new.env()
+rm(list=ls(envir=.blotter),envir=.blotter)
+myAcct<-'myAcct'
+myPort<-'myPortfolio'
+initPortf(name=myPort,symbols=Symbol, initDate=startDate,currency=CNY)
+initAcct(name= myAcct,portfolios=myPort,initDate=startDate,currency=CNY,initEq=10000)
+
+
+require(quantstrat)
+if (!exists('.strategy')) .strategy <- new.env()
+rm(list=ls(envir=.strategy),envir=.strategy)
+myStrgy <- 'trendLine'
+rm.strat(myStrgy)
+
+initOrders(portfolio = myPort,symbols = Symbol,initDate = startDate)
+
+strategy(name = myStrgy,store = T)
+
+ls(.strategy)
+strat <-getStrategy(myStrgy)
+summary(strat)
+add.indicator(strategy = myStrgy,name = 'TrendPoint',arguments = list(mkt = s, r = 0.002, dayAdvance = 1))
+
+
+add.signal(strategy = myStrgy, name="sigThreshold", 
+           arguments=list(threshold = 1,
+                          column='longSig.TrendPoint.ind', 
+                          relationship="eq", cross = F),
+           label="longEntry")
+
+add.signal(strategy = myStrgy, name="sigThreshold", 
+           arguments=list(threshold = -1, column='longSig.TrendPoint.ind', relationship="eq"),
+           label="longExit")
+
+
+
+add.rule(strategy = myStrgy, label = 'enterLong', name="ruleSignal",
+         arguments=list(sigcol="longEntry", 
+                        sigval=TRUE,
+                        orderqty='', 
+                        ordertype="market",
+                        orderside="long", 
+                        replace=FALSE,
+                        prefer="Close",
+                        osFUN = 'orderSize', 
+                        TxnFees = pennyPerShare(txnFees)
+                        ), 
+         type="enter", path.dep=TRUE)
+
+add.rule(strategy = myStrgy, label = 'stopLossLong',name = 'ruleSignal',
+        arguments = list(sigcol = 'longEntry',
+                         sigVal = T,
+                         orderqty = 'all',
+                         replace = F,
+                         orderside = 'long',
+                         tmult = T,
+                         ordertype = 'stoplimit',
+                         threshold = 0.0015,
+                         TxnFees = 0,
+                         orderset = 'ocolong'
+                         ),
+          type = 'chain', parent = 'enterLong', enabled=FALSE
+         )
+
+add.rule(strategy = myStrgy, name="ruleSignal", 
+         arguments=list(sigcol="longExit", sigval=TRUE, orderqty="all", 
+                        ordertype="market", orderside="long", replace=FALSE, prefer="Open"), 
+         type="exit", path.dep=TRUE)
+
+
+
+
+t1 <- Sys.time()
+out <- applyStrategy(strategy=myStrgy,portfolios=myPort, verbose=T)
+t2 <- Sys.time()
+print(t2-t1)
+updatePortf(myPort)
+updateAcct(myAcct)
+updateEndEq(myAcct)  
+chart.Posn(myPort,Symbol,theme=myTheme)
+ts2<-getTxns(Portfolio=myPort, Symbol=Symbol)
+View(ts2)
+
+
+
+
+ob <- getOrderBook(portfolio = myPort)
+ob
+
+tstats <- tradeStats(Portfolio=myPort, Symbol=Symbol)
+
+tab.trades <- cbind(
+  c("Trades","Win Percent","Loss Percent","W/L Ratio"),
+  c(tstats[,"Num.Trades"],tstats[,c("Percent.Positive","Percent.Negative")],
+    tstats[,"Percent.Positive"]/tstats[,"Percent.Negative"]))
+
+tab.profit <- cbind(
+  c("Net Profit","Gross Profits","Gross Losses","Profit Factor"),
+  c(tstats[,c("Net.Trading.PL","Gross.Profits","Gross.Losses",
+              "Profit.Factor")]))
+
+tab.wins <- cbind(
+  c("Avg Trade","Avg Win","Avg Loss","Avg W/L Ratio"),
+  c(tstats[,c("Avg.Trade.PL","Avg.Win.Trade","Avg.Losing.Trade",
+              "Avg.WinLoss.Ratio")]))
+
+trade.stats.tab <- data.frame(tab.trades,tab.profit,tab.wins)
+View(trade.stats.tab)
+

@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1406798264626.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "DA15E346",
+    "lastKnownWriteTime" : 13229740524830817,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "ob$myPortfolio",
+        "contentUrl" : "content?title=ob%24myPortfolio&file=9ea93207a2024759ad624400ed504e2a.htm",
+        "displayedObservations" : "30",
+        "displayedVariables" : 12,
+        "totalObservations" : "30",
+        "variables" : "12"
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

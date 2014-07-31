@@ -1,0 +1,276 @@
+require(PerformanceAnalytics)
+
+isDraw <- T
+range <- 0.0015
+r <- 0.0015
+
+
+#import data
+path<- 'RawData//IFB1407.csv'
+formate = '%d/%m/%Y %H:%M'
+# s<-getHistoryData(path, f ='%Y/%m/%d')
+s<-getHistoryData(path, f =formate)
+s<-s[1:300,]
+txnFees <- 19
+
+
+#init portfolio
+require(blotter)
+Symbol<-'s'
+CNY <- 'CNY'
+currency(CNY)
+get(CNY,envir=FinancialInstrument:::.instrument)
+stock(primary_id = Symbol, currency = CNY, multiplier=7.7) 
+get(Symbol,envir=FinancialInstrument:::.instrument)
+
+Sys.setenv(TZ = 'UTC')
+startDate <- '2001-01-01'
+
+if (!exists('.blotter')) .blotter <- new.env()
+rm(list=ls(envir=.blotter),envir=.blotter)
+# myAcct<-'myAcct'
+myPort<-'myPortfolio'
+initPortf(name=myPort,symbols=Symbol, initDate=startDate,currency=CNY)
+initAcct(name= myAcct,portfolios=myPort,initDate=startDate,currency=CNY,initEq=10000)
+
+
+require(quantstrat)
+if (!exists('.strategy')) .strategy <- new.env()
+rm(list=ls(envir=.strategy),envir=.strategy)
+myStrgy <- 'trendLine'
+rm.strat(myStrgy)
+
+initOrders(portfolio = myPort,symbols = Symbol,initDate = startDate)
+
+strategy(name = myStrgy,store = T)
+
+ls(.strategy)
+strat <-getStrategy(myStrgy)
+summary(strat)
+
+add.indicator(strategy = myStrgy,name = 'TrendLine',arguments = list(mkt = quote(s), r = r, range = range))
+
+
+add.signal(strategy = myStrgy, 
+           name="sigComparison", 
+           arguments=list(
+             columns=c('Close','up.TrendLine.ind'), 
+             relationship="gte"),
+           label='aboveUpTrend')
+
+add.signal(strategy = myStrgy, 
+           name="sigComparison", 
+           arguments=list(
+             columns=c('LOW','upR.TrendLine.ind'), 
+             relationship="lte"),
+           label='underUpR')
+
+add.signal(strategy = myStrgy, name="sigFormula", 
+                                arguments=list(formula="(aboveUpTrend & underUpR)",cross = F),
+           label="longSig")
+            
+add.signal(strategy = myStrgy, 
+                      name="sigComparison", 
+                      arguments=list(
+                        columns=c('Close','up.TrendLine.ind'), 
+                        relationship="lt"),
+                      label='endUp')
+           
+add.rule(strategy = myStrgy , name="ruleSignal",label = 'longEntry' ,
+         arguments=list(sigcol="longSig", 
+                        sigval=TRUE, orderqty='', 
+                        ordertype="market", 
+                        orderside="long",
+                        replace=FALSE, 
+                        prefer="Open", 
+                        TxnFees = -txnFees,
+                        osFUN = 'orderSize'), 
+         type="enter")
+
+
+add.rule(strategy = myStrgy, name="ruleSignal", label = 'longStop', type="chain",parent = 'longEntry',
+         arguments=list(sigcol="longSig", 
+                        sigval=TRUE,
+                        replace=FALSE, 
+                        orderside="long",
+                        orderqty="all",
+                        tmult= T, 
+                        threshold= 0.002,
+                        ordertype="stoplimit", 
+                        prefer="Open",
+                        orderset ='ocolong')         
+         )
+
+add.rule(strategy = myStrgy, name="ruleSignal", label = 'longtrailing', type="chain",parent = 'longEntry',
+         arguments=list(sigcol="longSig", 
+                        sigval=TRUE,
+                        replace=FALSE, 
+                        orderside="long",
+                        orderqty="all",
+                        tmult= T, 
+                        threshold= 0.002,
+                        ordertype="stoptrailing", 
+                        prefer="Open",
+                        orderset ='ocolong')         
+)
+
+add.rule(strategy = myStrgy, name="ruleSignal", label = 'longExit', type="chain",parent = 'longEntry',
+         arguments=list(sigcol="endUp", 
+                        sigval=TRUE,
+                        replace=FALSE, 
+                        orderside="long",
+                        orderqty="all",
+                        tmult= T, 
+                        ordertype="market", 
+                        prefer="Open",
+                        orderset ='ocolong')         
+)
+
+
+
+add.signal(strategy = myStrgy, 
+           name="sigComparison", 
+           arguments=list(
+             columns=c('Close','down.TrendLine.ind'), 
+             relationship="lte"),
+           label='underDownTrend')
+
+add.signal(strategy = myStrgy, 
+           name="sigComparison", 
+           arguments=list(
+             columns=c('HIGH','downR.TrendLine.ind'), 
+             relationship="gte"),
+           label='aboveDownR')
+
+add.signal(strategy = myStrgy, name="sigFormula", 
+           arguments=list(formula="(aboveDownR & underDownTrend)",cross = F),
+           label="shortSig")
+
+
+add.signal(strategy = myStrgy, 
+           name="sigComparison", 
+           arguments=list(
+             columns=c('Close','down.TrendLine.ind'), 
+             relationship="gt"),
+           label='endDown')
+
+add.rule(strategy = myStrgy , name="ruleSignal",label = 'shortEntry' ,
+         arguments=list(sigcol="shortSig", 
+                        sigval=TRUE, orderqty='', 
+                        ordertype="market", 
+                        orderside="short",
+                        TxnFees = -txnFees,
+                        replace=FALSE, 
+                        prefer="Open", 
+                        osFUN = 'orderSize'), 
+         type="enter")
+
+
+add.rule(strategy = myStrgy, name="ruleSignal", label = 'shortStop', type="chain",parent = 'shortEntry',
+         arguments=list(sigcol="shortSig", 
+                        sigval=TRUE,
+                        replace=FALSE, 
+                        orderside="short",
+                        orderqty="all",
+                        tmult= T, 
+                        threshold= 0.002,
+                        ordertype="stoplimit", 
+                        prefer="Open",
+                        orderset ='ocoshort')         
+)
+
+add.rule(strategy = myStrgy, name="ruleSignal", label = 'shorttrailing', type="chain", parent = 'shortEntry',
+         arguments=list(sigcol="shortSig", 
+                        sigval=TRUE,
+                        replace=FALSE, 
+                        orderside="short",
+                        orderqty="all",
+                        tmult= T, 
+                        threshold= 0.002,
+                        ordertype="stoptrailing", 
+                        prefer="Open",
+                        orderset ='ocoshort')        
+)
+
+add.rule(strategy = myStrgy, name="ruleSignal", label = 'shortExit', type="chain",parent = 'shortEntry',
+         arguments=list(sigcol="endDown", 
+                        sigval=TRUE,
+                        replace=FALSE, 
+                        orderside="short",
+                        orderqty="all",
+                        tmult= T, 
+                        ordertype="market", 
+                        prefer="Open",
+                        orderset ='ocoshort')         
+)
+
+
+t1 <- Sys.time()
+out <- applyStrategy(strategy=myStrgy,portfolios=myPort, verbose=T,debug = T)
+t2 <- Sys.time()
+print(t2-t1)
+updatePortf(myPort)
+updateAcct(myAcct)
+updateEndEq(myAcct)  
+myTheme<-chart_theme()
+myTheme$col$bg.col<-'black'
+myTheme$col$dn.col<-'yellow'
+myTheme$col$dn.border <- 'yellow'
+myTheme$col$up.col <- 'lightgray'
+myTheme$col$up.border <- 'lightgray'
+chart.Posn(myPort,Symbol,theme=myTheme)
+
+waves<-generateWaves(s, r=r)
+trends <- generateTrends(s,waves = waves, r= r)
+trendLine <- getTrendLine(trends,s,range = range) 
+ 
+if(isDraw){
+  curves <- getWaveCurve(waves)
+  upCurve <- curves[[1]]
+  downCurve <- curves[[2]]
+  
+  myTheme<-chart_theme()
+  myTheme$col$dn.col<-'red'
+  myTheme$col$dn.border <- 'red'
+  myTheme$col$up.col <- 'lightgray'
+  myTheme$col$up.border <- 'lightgray'
+  chartSeries(x=s,name='a')
+  addTA(upCurve,on =1, col='yellow', lwd=0.5)
+  addTA(downCurve,on =1, col='red', lwd=0.5)
+  
+  addTA(trendLine$up,on =1, col='cyan', lwd=2)
+  addTA(trendLine$upR,on =1, col='cyan', lwd=2)
+  addTA(trendLine$down,on =1, col='coral', lwd=2)
+  addTA(trendLine$downR,on =1, col='coral', lwd=2)
+  addTA(trendLine$dash,on =1, col='beige', lwd=2)
+}
+
+trends$startDate <- index(s)[trends$start]
+trends$breakDate <- index(s)[trends$breakPoint]
+trends$endDate <- index(s)[trends$end]
+
+
+ts<-getTxns(Portfolio=myPort, Symbol=Symbol)
+
+ob <- getOrderBook(portfolio = myPort)
+
+
+tstats <- tradeStats(Portfolio=myPort, Symbol=Symbol)
+
+tab.trades <- cbind(
+  c("Trades","Win Percent","Loss Percent","W/L Ratio"),
+  c(tstats[,"Num.Trades"],tstats[,c("Percent.Positive","Percent.Negative")],
+    tstats[,"Percent.Positive"]/tstats[,"Percent.Negative"]))
+
+tab.profit <- cbind(
+  c("Net Profit","Gross Profits","Gross Losses","Profit Factor"),
+  c(tstats[,c("Net.Trading.PL","Gross.Profits","Gross.Losses",
+              "Profit.Factor")]))
+
+tab.wins <- cbind(
+  c("Avg Trade","Avg Win","Avg Loss","Avg W/L Ratio"),
+  c(tstats[,c("Avg.Trade.PL","Avg.Win.Trade","Avg.Losing.Trade",
+              "Avg.WinLoss.Ratio")]))
+
+trade.stats.tab <- data.frame(tab.trades,tab.profit,tab.wins)
+

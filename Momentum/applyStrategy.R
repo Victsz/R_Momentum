@@ -74,12 +74,12 @@ add.signal(strategy = myStrgy, name="sigThreshold",
 
 add.rule(strategy = myStrgy , name="ruleSignal", 
          arguments=list(sigcol="longEntry", sigval=TRUE, orderqty='', 
-                        ordertype="market", orderside="long", replace=FALSE, prefer="Open", osFUN = 'orderSize', TxnFees = -txnFees), 
+                        ordertype="market", orderside="long", replace=FALSE, prefer="Close", osFUN = 'orderSize', TxnFees = -txnFees), 
          type="enter", path.dep=TRUE)
 
 add.rule(strategy = myStrgy, name="ruleSignal", 
          arguments=list(sigcol="longExit", sigval=TRUE, orderqty="all", 
-                        ordertype="market", orderside="long", replace=FALSE, prefer="Open"), 
+                        ordertype="market", orderside="long", replace=FALSE, prefer="Close"), 
          type="exit", path.dep=TRUE)
 
 

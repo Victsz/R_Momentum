@@ -1,15 +1,15 @@
 require(PerformanceAnalytics)
 #import data
-path<- 'RawData//IFB.csv'
-formate = '%m/%d/%Y %H:%M'
+path<- 'RawData//IFB1407.csv'
+formate = '%d/%m/%Y %H:%M'
 # s<-getHistoryData(path, f ='%Y/%m/%d')
 s<-getHistoryData(path, f =formate)
-
+# s<-s[1:200,]
 s$VOLUME<-NULL
 waves<-generateWaves(s, r=0.0015)
-trends <- generateTrends(s,waves = waves, r=0.001)
-trendLine <- getTrendLine(trends,s,range = 0.005) 
-isDraw <- F
+trends <- generateTrends(s,waves = waves, r=0.0015)
+trendLine <- getTrendLine(trends,s,range = 0.0015) 
+isDraw <- T
 if(isDraw){
 curves <- getWaveCurve(waves)
 upCurve <- curves[[1]]
@@ -25,6 +25,7 @@ addTA(upCurve,on =1, col='yellow', lwd=0.5)
 addTA(downCurve,on =1, col='red', lwd=0.5)
 
 addTA(trendLine$up,on =1, col='cyan', lwd=2)
+addTA(trendLine$upR,on =1, col='coral', lwd=2)
 addTA(trendLine$down,on =1, col='coral', lwd=2)
 addTA(trendLine$dash,on =1, col='beige', lwd=2)
 }
@@ -39,7 +40,7 @@ Symbol<-'s'
 CNY <- 'CNY'
 currency(CNY)
 get(CNY,envir=FinancialInstrument:::.instrument)
-stock(primary_id = Symbol, currency = CNY, multiplier=1) 
+stock(primary_id = Symbol, currency = CNY, multiplier= 7.7) 
 get(Symbol,envir=FinancialInstrument:::.instrument)
 
 Sys.setenv(TZ = 'UTC')
@@ -79,7 +80,7 @@ for( i in 2:nrow(s) )
   if(isSell & !is.null(nextDate))
   {
     addTxn(myPort, Symbol=Symbol, TxnDate=nextDate,
-           TxnPrice=nextOp, TxnQty = -posn , TxnFees= -100) 
+           TxnPrice=nextOp, TxnQty = -posn , TxnFees= - 19 * posn) 
   }
   if(posn <= 0 & isBuy & !is.null(nextDate))
   {

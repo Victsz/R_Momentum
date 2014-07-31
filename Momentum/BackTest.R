@@ -4,14 +4,12 @@ path<- 'RawData//399006.csv'
 
 s<-getHistoryData(path, f ='%Y/%m/%d')
 
-
 s$VOLUME<-NULL
 waves<-generateWaves(s, r=0.02)
 trends <- generateTrends(s,waves = waves, r=0.01)
 trendLine <- getTrendLine(trends,s,range = 0.05) 
-isDraw <- F
+isDraw <- T
 if(isDraw){
-
 
 curves <- getWaveCurve(waves)
 upCurve <- curves[[1]]

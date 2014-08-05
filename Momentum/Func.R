@@ -1,5 +1,6 @@
-#install.packages("quantstrat", repos="http://R-Forge.R-project.org")
-#install.packages("lubridate")
+# install.packages("quantstrat", repos="http://R-Forge.R-project.org")
+# install.packages("lubridate")
+# install.packages("doParallel", repos="http://R-Forge.R-project.org")
 require("lubridate")
 require(blotter)
 
@@ -55,11 +56,12 @@ orderSize <- function(data, timestamp, orderqty, ordertype, orderside, portfolio
     posn <- getPosQty(Portfolio = portfolio, Symbol=Symbol, Date=timestamp)
     if(!is.na(posn) & posn>0)
     { 
+    
       return(0)
     }
     else
     {      
-      return (10000/as.numeric(Cl(data[timestamp])))
+      return (round(10000/as.numeric(Cl(data[timestamp]))))
     } 
   }else
   {
@@ -71,10 +73,20 @@ orderSize <- function(data, timestamp, orderqty, ordertype, orderside, portfolio
     else
     {
       
-      return (-10000/as.numeric(Cl(data[timestamp])))
+      return (round((-10000/as.numeric(Cl(data[timestamp])))))
     } 
   }
 
+}
+
+getTxnFeeStock <- function(TxnQty,TxnPrice,...)
+{
+  return (abs(TxnQty) * TxnPrice * -0.008)
+}
+
+getTxnFee <- function(TxnQty,TxnPrice,...)
+{
+  return (abs(TxnQty) * -19)
 }
 getLast <- function(x) { tail(x, n = 1) }
 

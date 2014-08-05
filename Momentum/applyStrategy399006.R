@@ -1,16 +1,16 @@
 require(PerformanceAnalytics)
 
 isDraw <- T
-range <- 0.0015
-r <- 0.0015
-stopThreshold <- 0.0015
+range <- 0.02
+r <- 0.015
+stopThreshold <- 0.03
 
 #import data
-path<- 'RawData//IFB1407.csv'
-formate = '%d/%m/%Y %H:%M'
+path<- 'RawData//399006.csv'
+formate = '%Y/%m/%d'
 # s<-getHistoryData(path, f ='%Y/%m/%d')
 s<-getHistoryData(path, f =formate)
-s<-s[200:400,]
+
 txnFees <- 1900
 
 #init portfolio
@@ -19,7 +19,7 @@ Symbol<-'s'
 CNY <- 'CNY'
 currency(CNY)
 get(CNY,envir=FinancialInstrument:::.instrument)
-stock(primary_id = Symbol, currency = CNY, multiplier=7.7) 
+stock(primary_id = Symbol, currency = CNY, multiplier=1) 
 get(Symbol,envir=FinancialInstrument:::.instrument)
 
 Sys.setenv(TZ = 'UTC')
@@ -67,7 +67,7 @@ add.rule(strategy = myStrgy , name="ruleSignal",label = 'shortEntry',
          arguments=list(sigcol="shortBegin", sigval=TRUE, orderqty='', 
                         ordertype="market", 
                         orderside="short",
-                        replace=FALSE, prefer="Close", osFUN = 'orderSize', TxnFees = 'getTxnFee'), 
+                        replace=FALSE, prefer="Close", osFUN = 'orderSize', TxnFees = 'getTxnFeeStock'), 
          type="enter")
 
 #Exit
@@ -144,7 +144,7 @@ add.rule(strategy = myStrgy , name="ruleSignal",label = 'longEntry',
          arguments=list(sigcol="longBegin", sigval=TRUE, orderqty='', 
                         ordertype="market", 
                         orderside="long",
-                        replace=FALSE, prefer="Close", osFUN = 'orderSize', TxnFees = 'getTxnFee'), 
+                        replace=FALSE, prefer="Close", osFUN = 'orderSize', TxnFees = 'getTxnFeeStock'), 
          type="enter")
 
 #Exit
@@ -240,8 +240,8 @@ if(isDraw){
   addTA(upCurve,on =1, col='yellow', lwd=0.5)
   addTA(downCurve,on =1, col='red', lwd=0.5)
   
-#   addTA(trendLine$up,on =1, col='cyan', lwd=2)
-#   addTA(trendLine$upR,on =1, col='cyan', lwd=2)
+  addTA(trendLine$up,on =1, col='cyan', lwd=2)
+  addTA(trendLine$upR,on =1, col='cyan', lwd=2)
   addTA(trendLine$down,on =1, col='coral', lwd=2)
   addTA(trendLine$downR,on =1, col='coral', lwd=2)
   addTA(trendLine$dash,on =1, col='beige', lwd=2)
@@ -256,7 +256,7 @@ ts<-getTxns(Portfolio=myPort, Symbol=Symbol)
 
 ob <- getOrderBook(portfolio = myPort)
 
-
+View(ob$myPortfolio)
 tstats <- tradeStats(Portfolio=myPort, Symbol=Symbol)
 
 tab.trades <- cbind(

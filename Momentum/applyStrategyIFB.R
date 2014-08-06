@@ -9,8 +9,7 @@ stopThreshold <- 0.0025
 path<- 'RawData//IFB1407.csv'
 formate = '%d/%m/%Y %H:%M'
 # s<-getHistoryData(path, f ='%Y/%m/%d')
-s<-getHistoryData(path, f =formate)
-
+s<-getHistoryData(path, f =formate) 
 txnFees <- 19
 
 #init portfolio
@@ -214,44 +213,6 @@ updateEndEq(myAcct)
 
 
 
-
-myTheme<-NULL
-myTheme <- chart_theme()
-myTheme$col$dn.col<-'bisque4'
-myTheme$col$up.col <- 'coral3'
-chart.Posn(myPort,Symbol,theme=myTheme)
-
-
-waves<-generateWaves(s, r=r)
-trends <- generateTrends(s,waves = waves, r= r)
-trendLine <- getTrendLine(trends,s,range = range) 
-
-if(isDraw){
-  curves <- getWaveCurve(waves)
-  upCurve <- curves[[1]]
-  downCurve <- curves[[2]]
-  
-  myTheme<-chart_theme()
-  myTheme$col$dn.col<-'red'
-  myTheme$col$dn.border <- 'red'
-  myTheme$col$up.col <- 'lightgray'
-  myTheme$col$up.border <- 'lightgray'
-  chartSeries(x=s,name='a')
-  addTA(upCurve,on =1, col='yellow', lwd=0.5)
-  addTA(downCurve,on =1, col='red', lwd=0.5)
-  
-   addTA(trendLine$up,on =1, col='cyan', lwd=2)
-#   addTA(trendLine$upR,on =1, col='cyan', lwd=2)
-  addTA(trendLine$down,on =1, col='coral', lwd=2)
-#   addTA(trendLine$downR,on =1, col='coral', lwd=2)
-  addTA(trendLine$dash,on =1, col='beige', lwd=2)
-}
-
-trends$startDate <- index(s)[trends$start]
-trends$breakDate <- index(s)[trends$breakPoint]
-trends$endDate <- index(s)[trends$end]
-
-
 ts<-getTxns(Portfolio=myPort, Symbol=Symbol)
 
 ob <- getOrderBook(portfolio = myPort)
@@ -274,4 +235,47 @@ tab.wins <- cbind(
   c(tstats[,c("Avg.Trade.PL","Avg.Win.Trade","Avg.Losing.Trade",
               "Avg.WinLoss.Ratio")]))
 
-trade.stats.tab <- data.frame(tab.trades,tab.profit,tab.wins)
+suppressWarnings((trade.stats.tab <- data.frame(tab.trades,tab.profit,tab.wins)))
+
+View(ob$myPortfolio)
+suppressWarnings(View(trade.stats.tab))
+
+myTheme<-NULL
+myTheme <- chart_theme()
+myTheme$col$dn.col<-'bisque4'
+myTheme$col$up.col <- 'coral3'
+chart.Posn(myPort,Symbol,theme=myTheme,TA = '') 
+
+add_TA(x = mktdata$up.TrendPoint.ind,on =1, col='cyan', lwd=2)
+add_TA(x = mktdata$down.TrendPoint.ind,on =1, col='coral', lwd=2)
+add_TA(x = mktdata$dash.TrendPoint.ind,on =1, col='pink', lwd=2)
+waves<-generateWaves(s, r=r)
+trends <- generateTrends(s,waves = waves, r= r)
+trendLine <- getTrendLine(trends,s,range = range) 
+
+
+trends$startDate <- index(s)[trends$start]
+trends$breakDate <- index(s)[trends$breakPoint]
+trends$endDate <- index(s)[trends$end]
+
+# 
+# if(isDraw){
+#   curves <- getWaveCurve(waves)
+#   upCurve <- curves[[1]]
+#   downCurve <- curves[[2]]
+#   
+#   myTheme<-chart_theme()
+#   myTheme$col$dn.col<-'red'
+#   myTheme$col$dn.border <- 'red'
+#   myTheme$col$up.col <- 'lightgray'
+#   myTheme$col$up.border <- 'lightgray'
+#   chartSeries(x=s,name='a')
+#   addTA(upCurve,on =1, col='yellow', lwd=0.5)
+#   addTA(downCurve,on =1, col='red', lwd=0.5)
+#   
+#    addTA(trendLine$up,on =1, col='cyan', lwd=2)
+# #   addTA(trendLine$upR,on =1, col='cyan', lwd=2)
+#   addTA(trendLine$down,on =1, col='coral', lwd=2)
+# #   addTA(trendLine$downR,on =1, col='coral', lwd=2)
+#   addTA(trendLine$dash,on =1, col='beige', lwd=2)
+# }

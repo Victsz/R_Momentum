@@ -408,14 +408,17 @@ calTrendStep <- function(trend,dire, useClose = F)
 
 
 
-TrendPoint <- function(mkt, r,dayAdvance = 0)
+TrendPoint <- function(mkt, r,dayAdvance = 0, range = 0.001)
 {
   waves<-generateWaves(mkt = mkt, r= r)
   trends <- generateTrends(mkt = mkt,waves = waves, r=r)
 #   print(trends)
   trendPoint <- TrendPointIndicator(trends,nrow(mkt), dayAdvance = dayAdvance)
   trendPoint <- xts(x = trendPoint,index(mkt))   
-  return (trendPoint)
+
+  trendLine <- TrendLineIndicator(trends,mkt,range, dayAdvance = dayAdvance)
+    
+  return (xts(x = cbind(trendPoint,trendLine),index(mkt)) )
 }
 
 
@@ -476,7 +479,7 @@ TrendLine <- function(mkt, r=0.02, range = 0.02)
   return (trendLine)
 }
 
-TrendLineIndicator <- function(trends,mkt,range)
+TrendLineIndicator <- function(trends,mkt,range, dayAdvance = 0)
 { 
   upTrendLine<- rep(NA, nrow(mkt))
   downTrendLine<- rep(NA, nrow(mkt))
@@ -496,11 +499,13 @@ TrendLineIndicator <- function(trends,mkt,range)
     breakPoint <- trend$breakPoint
     step <- trend$step
     if(dire==1){
-      upTrendLine<-calTrendValue(startPoint = mkt[start], trendLine = upTrendLine,start = start, end = end,dire = dire,step = step, lineStart = breakPoint)
+      upTrendLine<-calTrendValue(startPoint = mkt[start], trendLine = upTrendLine,start = start, end = end - dayAdvance,dire = dire,step = step, lineStart = breakPoint)
     }else
     {
-      downTrendLine<-calTrendValue(startPoint = mkt[start], trendLine = downTrendLine,start = start, end = end,dire = dire,step = step, lineStart = breakPoint)
+      downTrendLine<-calTrendValue(startPoint = mkt[start], trendLine = downTrendLine,start = start, end = end - dayAdvance,dire = dire,step = step, lineStart = breakPoint)
     }
+#     dashLine <-calTrendValue(startPoint = mkt[start], trendLine = dashLine,start = start, end = breakPoint -1 - dayAdvance,dire = dire,step = step)
+ 
     dashLine <-calTrendValue(startPoint = mkt[start], trendLine = dashLine,start = start, end = breakPoint -1 ,dire = dire,step = step)
   }
   # connect from breakpoint to end
@@ -510,7 +515,9 @@ TrendLineIndicator <- function(trends,mkt,range)
   #  downTrendLine<-downTrendLine[!is.na(downTrendLine)]
   # names(dashLine) <- index(mkt)
   #  dashLine<-dashLine[!is.na(dashLine)]
-  out <- cbind(upTrendLine, downTrendLine,upTrendLine*(1+range),downTrendLine*(1-range))
-  colnames(out) <- c("up", "down",'upR','downR')
+  out <- cbind(upTrendLine, downTrendLine,dashLine,upTrendLine*(1+range),downTrendLine*(1-range))
+  colnames(out) <- c("up", "down","dash",'upR','downR')
+ 
   return (out)
 }
+

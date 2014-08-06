@@ -215,7 +215,7 @@ getFirstTrend <- function(s,waves,r)
         dire <- 1
         start <- curWaveStart
         extrema <- coredata(Hi(s[i]))[1]
-        break
+       
       }else if(cl < (1-r) * min(prevWave1$bottom, prevWave2$bottom))
       {
         #break, new down trend
@@ -223,26 +223,32 @@ getFirstTrend <- function(s,waves,r)
         dire <- -1
         start <- curWaveStart
         extrema <- coredata(Lo(s[i]))[1]
-        break
+      
       }
-    }
-    if(findTrend)
-    {
-      step <- 0
-      start <- start - 1 
-      # filter trend with low degree
-      while (abs(step) < 0.4 * r * cl )
-      {      
-        start <- start +1
-        if(start>= breakPoint)
+      
+      if(findTrend)
+      {
+        step <- 0
+        start <- start - 1 
+        # filter trend with low degree
+        while (abs(step) < 0.1 * r * cl )
+        {      
+          start <- start +1
+          if(start>= breakPoint)
+          {
+            findTrend <- F
+            break
+          }
+          step <- calTrendStep(trend = s[start:breakPoint], dire = dire)  
+          
+        }
+        if(findTrend)
         {
-          findTrend <- F
           break
         }
-        step <- calTrendStep(trend = s[start:breakPoint], dire = dire)  
-        
       }
     }
+    
     if(findTrend)
     {
       step <- calTrendStep(trend = s[start:breakPoint], dire = dire)
@@ -289,9 +295,9 @@ generateTrends <- function(mkt,waves,r = 0.001)
         # handle step is NA, ie start & break
         
         step <- calTrendStep(trend = mkt[start:i], dire = dire)
-        if(abs(step) < 0.4 * r * cl)
+        if(abs(step) <  0.1 * r * cl)
         {
-          lastTrend$step <- 0.4 * r * cl * dire
+          lastTrend$step <-  0.1 * r * cl * dire
           lastTrend$end <- i
           isEnd <- T
         }
@@ -406,7 +412,7 @@ TrendPoint <- function(mkt, r,dayAdvance = 0)
 {
   waves<-generateWaves(mkt = mkt, r= r)
   trends <- generateTrends(mkt = mkt,waves = waves, r=r)
-  print(trends)
+#   print(trends)
   trendPoint <- TrendPointIndicator(trends,nrow(mkt), dayAdvance = dayAdvance)
   trendPoint <- xts(x = trendPoint,index(mkt))   
   return (trendPoint)

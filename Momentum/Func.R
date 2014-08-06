@@ -79,6 +79,37 @@ orderSize <- function(data, timestamp, orderqty, ordertype, orderside, portfolio
 
 }
 
+orderSizeIFB <- function(data, timestamp, orderqty, ordertype, orderside, portfolio, symbol,
+                      ruletype, ...)
+{
+  if(orderside == 'long')
+  {
+    posn <- getPosQty(Portfolio = portfolio, Symbol=Symbol, Date=timestamp)
+    if(!is.na(posn) & posn>0)
+    { 
+      
+      return(0)
+    }
+    else
+    {      
+      return (1)
+    } 
+  }else
+  {
+    posn <- getPosQty(Portfolio = portfolio, Symbol=Symbol, Date=timestamp) 
+    if(!is.na(posn) & posn<0)
+    { 
+      return(0)
+    }
+    else
+    {
+      
+      return (-1)
+    } 
+  }
+  
+}
+
 getTxnFeeStock <- function(TxnQty,TxnPrice,...)
 {
   return (abs(TxnQty) * TxnPrice * -0.008)

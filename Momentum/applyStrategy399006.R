@@ -3,7 +3,7 @@ require(PerformanceAnalytics)
 isDraw <- T
 range <- 0.02
 r <- 0.015
-stopThreshold <- 0.03
+stopThreshold <- 0.05
 
 #import data
 path<- 'RawData//399006.csv'
@@ -241,9 +241,9 @@ if(isDraw){
   addTA(downCurve,on =1, col='red', lwd=0.5)
   
   addTA(trendLine$up,on =1, col='cyan', lwd=2)
-  addTA(trendLine$upR,on =1, col='cyan', lwd=2)
+#   addTA(trendLine$upR,on =1, col='cyan', lwd=2)
   addTA(trendLine$down,on =1, col='coral', lwd=2)
-  addTA(trendLine$downR,on =1, col='coral', lwd=2)
+#   addTA(trendLine$downR,on =1, col='coral', lwd=2)
   addTA(trendLine$dash,on =1, col='beige', lwd=2)
 }
 

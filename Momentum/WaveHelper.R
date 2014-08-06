@@ -162,6 +162,7 @@ getWaveByIndex <- function(i,waves)
   for(w in 1:waveCount)
   {    
     wave <- waves[[w]]     
+   
     if(wave$waveEnd >= i & wave$waveStart <=i )
     {
       return (w)

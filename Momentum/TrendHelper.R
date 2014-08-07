@@ -82,7 +82,7 @@ calTrendValue <- function (startPoint,trendLine,start,end,dire,step,lineStart = 
   
 }
 
-findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastTrend, initStart)
+findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastTrend, initStart,speedRatio)
 { 
   newTrend <- NULL
   breakPoint <- i
@@ -153,7 +153,7 @@ findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastTrend, initStart
     step <- 0
     start <- start - 1 
     
-    while (abs(step) < 0.1 * r * cl )
+    while (abs(step) < speedRatio* r * cl )
     {      
       start <- start +1
       if(start>= breakPoint)
@@ -186,7 +186,7 @@ findNewTrend <- function(curWave,prevWave1,prevWave2,s,r,i, lastTrend, initStart
   return (newTrend)
 }
 
-getFirstTrend <- function(s,waves,r)
+getFirstTrend <- function(s,waves,r,speedRatio)
 { 
   waveCount <- length(waves)
   findTrend <- F
@@ -231,7 +231,7 @@ getFirstTrend <- function(s,waves,r)
         step <- 0
         start <- start - 1 
         # filter trend with low degree
-        while (abs(step) < 0.1 * r * cl )
+        while (abs(step) < speedRatio * r * cl )
         {      
           start <- start +1
           if(start>= breakPoint)
@@ -260,9 +260,9 @@ getFirstTrend <- function(s,waves,r)
   return (firstTrend)
 }
 
-generateTrends <- function(mkt,waves,r = 0.001)
+generateTrends <- function(mkt,waves,r = 0.001, speedRatio = 0.1)
 {
-  firstTrend <- getFirstTrend(mkt,waves,r)
+  firstTrend <- getFirstTrend(mkt,waves,r,speedRatio)
   trends <- firstTrend
   waveCount <- length(waves)
   length <- nrow(mkt)
@@ -279,7 +279,7 @@ generateTrends <- function(mkt,waves,r = 0.001)
       prevWave1 <- waves[[w-1]]
       prevWave2 <- waves[[w-2]]
       lastInitStart <- trends$start[max(which(x = trends$type=='Init'))]
-      newTrend <- findNewTrend(curWave=curWave,prevWave1 =  prevWave1,prevWave2 =  prevWave2,s =  s,r = r,i = i,lastTrend = lastTrend,initStart = lastInitStart)
+      newTrend <- findNewTrend(curWave=curWave,prevWave1 =  prevWave1,prevWave2 =  prevWave2,s =  s,r = r,i = i,lastTrend = lastTrend,initStart = lastInitStart,speedRatio = speedRatio)
       if(!is.null(newTrend))
       {
         trends <- rbind(trends,newTrend)
@@ -295,9 +295,9 @@ generateTrends <- function(mkt,waves,r = 0.001)
         # handle step is NA, ie start & break
         
         step <- calTrendStep(trend = mkt[start:i], dire = dire)
-        if(abs(step) <  0.1 * r * cl)
+        if(abs(step) <  speedRatio * r * cl)
         {
-          lastTrend$step <-  0.1 * r * cl * dire
+          lastTrend$step <-  speedRatio * r * cl * dire
           lastTrend$end <- i
           isEnd <- T
         }
@@ -408,10 +408,10 @@ calTrendStep <- function(trend,dire, useClose = F)
 
 
 
-TrendPoint <- function(mkt, r,dayAdvance = 0, range = 0.001)
+TrendPoint <- function(mkt, r,dayAdvance = 0, range = 0.001, speedRatio = 0.1)
 {
   waves<-generateWaves(mkt = mkt, r= r)
-  trends <- generateTrends(mkt = mkt,waves = waves, r=r)
+  trends <- generateTrends(mkt = mkt,waves = waves, r=r,speedRatio = speedRatio)
 #   print(trends)
   trendPoint <- TrendPointIndicator(trends,nrow(mkt), dayAdvance = dayAdvance)
   trendPoint <- xts(x = trendPoint,index(mkt))   
@@ -470,10 +470,10 @@ TrendPointIndicator <- function(trends, dLength, dayAdvance)
   return (out)
 }
 
-TrendLine <- function(mkt, r=0.02, range = 0.02)
+TrendLine <- function(mkt, r=0.02, range = 0.02,speedRatio = 0.1)
 {
   waves<-generateWaves(mkt = mkt, r=r)
-  trends <- generateTrends(mkt = mkt,waves = waves, r=r) 
+  trends <- generateTrends(mkt = mkt,waves = waves, r=r,speedRatio=speedRatio) 
   trendLine <- TrendLineIndicator(trends,mkt,range)
   trendLine <- xts(x = trendLine,index(mkt))   
   return (trendLine)

@@ -3,15 +3,14 @@ require(PerformanceAnalytics)
 isDraw <- T
 range <- 0.02
 r <- 0.015
-stopThreshold <- 0.05
-
+stopThreshold <- 0.03
+speedRatio <- 0.2
 #import data
 path<- 'RawData//399006.csv'
 formate = '%Y/%m/%d'
 # s<-getHistoryData(path, f ='%Y/%m/%d')
 s<-getHistoryData(path, f =formate)
 
-txnFees <- 1900
 
 #init portfolio
 require(blotter)
@@ -46,7 +45,7 @@ strategy(name = myStrgy,store = T)
 ls(.strategy)
 strat <-getStrategy(myStrgy)
 summary(strat)
-add.indicator(strategy = myStrgy,name = 'TrendPoint',arguments = list(mkt = s, r = r, dayAdvance = 1))
+add.indicator(strategy = myStrgy,name = 'TrendPoint',arguments = list(mkt = s, r = r, range = range,dayAdvance = 1,speedRatio = speedRatio))
 
 #Short
 #Enter
@@ -63,12 +62,12 @@ add.signal(strategy = myStrgy, name="sigFormula",
            arguments=list(formula="(shortInitSig | shortSig)",cross = F),
            label="shortBegin")
 
-add.rule(strategy = myStrgy , name="ruleSignal",label = 'shortEntry', 
-         arguments=list(sigcol="shortBegin", sigval=TRUE, orderqty='', 
-                        ordertype="market", 
-                        orderside="short",
-                        replace=FALSE, prefer="Close", osFUN = 'orderSize', TxnFees = 'getTxnFeeStock'), 
-         type="enter")
+# add.rule(strategy = myStrgy , name="ruleSignal",label = 'shortEntry', 
+#          arguments=list(sigcol="shortBegin", sigval=TRUE, orderqty='', 
+#                         ordertype="market", 
+#                         orderside="short",
+#                         replace=FALSE, prefer="Close", osFUN = 'orderSize', TxnFees = 'getTxnFeeStock'), 
+#          type="enter")
 
 #Exit
 add.signal(strategy = myStrgy, name="sigThreshold", 
@@ -146,7 +145,24 @@ add.rule(strategy = myStrgy , name="ruleSignal",label = 'longEntry',
                         orderside="long",
                         replace=FALSE, prefer="Close", osFUN = 'orderSize', TxnFees = 'getTxnFeeStock'), 
          type="enter")
+#Re Enter
+add.signal(strategy = myStrgy, name="sigComparison", 
+           arguments=list(columns=c('up.TrendPoint.ind','Close'), relationship="lte"),
+           label="aboveUp")
+add.signal(strategy = myStrgy, name="sigComparison", 
+           arguments=list(columns=c('upR.TrendPoint.ind','Close'), relationship="gte"),
+           label="underUpR")
 
+
+add.signal(strategy = myStrgy, name="sigFormula", 
+           arguments=list(formula="(aboveUp & underUpR)",cross = F),
+           label="longAgain")
+add.rule(strategy = myStrgy , name="ruleSignal",label = 'longEntry', 
+         arguments=list(sigcol="longAgain", sigval=TRUE, orderqty='', 
+                        ordertype="market", 
+                        orderside="long",
+                        replace=FALSE, prefer="Close", osFUN = 'orderSize', TxnFees = 'getTxnFeeStock'), 
+         type="enter")
 #Exit
 add.signal(strategy = myStrgy, name="sigThreshold", 
            arguments=list(threshold = -1, column='longPoint.TrendPoint.ind', relationship="eq"),
@@ -214,49 +230,11 @@ updateEndEq(myAcct)
 
 
 
-
-myTheme<-NULL
-myTheme <- chart_theme()
-myTheme$col$dn.col<-'bisque4'
-myTheme$col$up.col <- 'coral3'
-chart.Posn(myPort,Symbol,theme=myTheme)
-
-
-waves<-generateWaves(s, r=r)
-trends <- generateTrends(s,waves = waves, r= r)
-trendLine <- getTrendLine(trends,s,range = range) 
-
-if(isDraw){
-  curves <- getWaveCurve(waves)
-  upCurve <- curves[[1]]
-  downCurve <- curves[[2]]
-  
-  myTheme<-chart_theme()
-  myTheme$col$dn.col<-'red'
-  myTheme$col$dn.border <- 'red'
-  myTheme$col$up.col <- 'lightgray'
-  myTheme$col$up.border <- 'lightgray'
-  chartSeries(x=s,name='a')
-  addTA(upCurve,on =1, col='yellow', lwd=0.5)
-  addTA(downCurve,on =1, col='red', lwd=0.5)
-  
-  addTA(trendLine$up,on =1, col='cyan', lwd=2)
-#   addTA(trendLine$upR,on =1, col='cyan', lwd=2)
-  addTA(trendLine$down,on =1, col='coral', lwd=2)
-#   addTA(trendLine$downR,on =1, col='coral', lwd=2)
-  addTA(trendLine$dash,on =1, col='beige', lwd=2)
-}
-
-trends$startDate <- index(s)[trends$start]
-trends$breakDate <- index(s)[trends$breakPoint]
-trends$endDate <- index(s)[trends$end]
-
-
 ts<-getTxns(Portfolio=myPort, Symbol=Symbol)
 
 ob <- getOrderBook(portfolio = myPort)
 
-View(ob$myPortfolio)
+
 tstats <- tradeStats(Portfolio=myPort, Symbol=Symbol)
 
 tab.trades <- cbind(
@@ -274,4 +252,22 @@ tab.wins <- cbind(
   c(tstats[,c("Avg.Trade.PL","Avg.Win.Trade","Avg.Losing.Trade",
               "Avg.WinLoss.Ratio")]))
 
-trade.stats.tab <- data.frame(tab.trades,tab.profit,tab.wins)
+suppressWarnings((trade.stats.tab <- data.frame(tab.trades,tab.profit,tab.wins)))
+suppressWarnings(View(trade.stats.tab))
+View(ob$myPortfolio)
+View(ts)
+
+
+myTheme<-NULL
+myTheme <- chart_theme()
+myTheme$col$dn.col<-'bisque4'
+myTheme$col$up.col <- 'coral3'
+chart.Posn(myPort,Symbol,theme=myTheme,TA = '') 
+
+add_TA(x = mktdata$up.TrendPoint.ind,on =1, col='cyan', lwd=2)
+add_TA(x = mktdata$down.TrendPoint.ind,on =1, col='coral', lwd=2)
+add_TA(x = mktdata$dash.TrendPoint.ind,on =1, col='pink', lwd=2)
+
+
+add_TA(x = mktdata$upR.TrendPoint.ind,on =1, col='cyan', lwd=2)
+add_TA(x = mktdata$downR.TrendPoint.ind,on =1, col='coral', lwd=2)

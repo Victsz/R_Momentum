@@ -1,7 +1,7 @@
 require(PerformanceAnalytics)
 
 isDraw <- T
-range <- 0.001
+range <- 0.0015
 r <- 0.0015
 stopThreshold <- 0.0025
 
@@ -45,7 +45,7 @@ strategy(name = myStrgy,store = T)
 ls(.strategy)
 strat <-getStrategy(myStrgy)
 summary(strat)
-add.indicator(strategy = myStrgy,name = 'TrendPoint',arguments = list(mkt = s, r = r, dayAdvance = 1))
+add.indicator(strategy = myStrgy,name = 'TrendPoint',arguments = list(mkt = s, r = r, dayAdvance = 1, range = range))
 
 #Short
 #Enter
@@ -64,6 +64,24 @@ add.signal(strategy = myStrgy, name="sigFormula",
 
 add.rule(strategy = myStrgy , name="ruleSignal",label = 'shortEntry', 
          arguments=list(sigcol="shortBegin", sigval=TRUE, orderqty='', 
+                        ordertype="market", 
+                        orderside="short",
+                        replace=FALSE, prefer="Close", osFUN = 'orderSizeIFB', TxnFees = 'getTxnFee'), 
+         type="enter")
+#Re Enter
+add.signal(strategy = myStrgy, name="sigComparison", 
+           arguments=list(columns=c('down.TrendPoint.ind','Close'), relationship="gte"),
+           label="underDown")
+add.signal(strategy = myStrgy, name="sigComparison", 
+           arguments=list(columns=c('downR.TrendPoint.ind','Close'), relationship="lte"),
+           label="aboveDownR")
+
+
+add.signal(strategy = myStrgy, name="sigFormula", 
+           arguments=list(formula="(underDown & aboveDownR)",cross = F),
+           label="shortAgain")
+add.rule(strategy = myStrgy , name="ruleSignal",label = 'shortEntry', 
+         arguments=list(sigcol="shortAgain", sigval=TRUE, orderqty='', 
                         ordertype="market", 
                         orderside="short",
                         replace=FALSE, prefer="Close", osFUN = 'orderSizeIFB', TxnFees = 'getTxnFee'), 
@@ -145,7 +163,24 @@ add.rule(strategy = myStrgy , name="ruleSignal",label = 'longEntry',
                         orderside="long",
                         replace=FALSE, prefer="Close", osFUN = 'orderSizeIFB', TxnFees = 'getTxnFee'), 
          type="enter")
+#Re Enter
+add.signal(strategy = myStrgy, name="sigComparison", 
+           arguments=list(columns=c('up.TrendPoint.ind','Close'), relationship="lte"),
+           label="aboveUp")
+add.signal(strategy = myStrgy, name="sigComparison", 
+           arguments=list(columns=c('upR.TrendPoint.ind','Close'), relationship="gte"),
+           label="underUpR")
 
+
+add.signal(strategy = myStrgy, name="sigFormula", 
+           arguments=list(formula="(aboveUp & underUpR)",cross = F),
+           label="longAgain")
+add.rule(strategy = myStrgy , name="ruleSignal",label = 'longEntry', 
+         arguments=list(sigcol="longAgain", sigval=TRUE, orderqty='', 
+                        ordertype="market", 
+                        orderside="long",
+                        replace=FALSE, prefer="Close", osFUN = 'orderSizeIFB', TxnFees = 'getTxnFee'), 
+         type="enter")
 #Exit
 add.signal(strategy = myStrgy, name="sigThreshold", 
            arguments=list(threshold = -1, column='longPoint.TrendPoint.ind', relationship="eq"),
@@ -236,9 +271,10 @@ tab.wins <- cbind(
               "Avg.WinLoss.Ratio")]))
 
 suppressWarnings((trade.stats.tab <- data.frame(tab.trades,tab.profit,tab.wins)))
-
-View(ob$myPortfolio)
 suppressWarnings(View(trade.stats.tab))
+View(ob$myPortfolio)
+View(ts)
+
 
 myTheme<-NULL
 myTheme <- chart_theme()
@@ -249,6 +285,12 @@ chart.Posn(myPort,Symbol,theme=myTheme,TA = '')
 add_TA(x = mktdata$up.TrendPoint.ind,on =1, col='cyan', lwd=2)
 add_TA(x = mktdata$down.TrendPoint.ind,on =1, col='coral', lwd=2)
 add_TA(x = mktdata$dash.TrendPoint.ind,on =1, col='pink', lwd=2)
+
+
+add_TA(x = mktdata$upR.TrendPoint.ind,on =1, col='cyan', lwd=2)
+add_TA(x = mktdata$downR.TrendPoint.ind,on =1, col='coral', lwd=2)
+
+
 waves<-generateWaves(s, r=r)
 trends <- generateTrends(s,waves = waves, r= r)
 trendLine <- getTrendLine(trends,s,range = range) 

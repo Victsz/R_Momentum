@@ -112,7 +112,7 @@ orderSizeIFB <- function(data, timestamp, orderqty, ordertype, orderside, portfo
 
 getTxnFeeStock <- function(TxnQty,TxnPrice,...)
 {
-  return (abs(TxnQty) * TxnPrice * -0.008)
+  return (abs(TxnQty) * TxnPrice * -0.002)
 }
 
 getTxnFee <- function(TxnQty,TxnPrice,...)

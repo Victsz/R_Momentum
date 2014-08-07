@@ -3,10 +3,10 @@ require(PerformanceAnalytics)
 isDraw <- T
 range <- 0.0015
 r <- 0.0015
-stopThreshold <- 0.0025
-
+stopThreshold <- 0.002
+speedRatio <- 0.3
 #import data
-path<- 'RawData//IFB1407.csv'
+path<- 'RawData//IFBQ4.csv'
 formate = '%d/%m/%Y %H:%M'
 # s<-getHistoryData(path, f ='%Y/%m/%d')
 s<-getHistoryData(path, f =formate) 
@@ -45,7 +45,7 @@ strategy(name = myStrgy,store = T)
 ls(.strategy)
 strat <-getStrategy(myStrgy)
 summary(strat)
-add.indicator(strategy = myStrgy,name = 'TrendPoint',arguments = list(mkt = s, r = r, dayAdvance = 1, range = range))
+add.indicator(strategy = myStrgy,name = 'TrendPoint',arguments = list(mkt = s, r = r, dayAdvance = 1, range = range, speedRatio=speedRatio))
 
 #Short
 #Enter
@@ -248,57 +248,6 @@ updateEndEq(myAcct)
 
 
 
-ts<-getTxns(Portfolio=myPort, Symbol=Symbol)
-
-ob <- getOrderBook(portfolio = myPort)
-
-
-tstats <- tradeStats(Portfolio=myPort, Symbol=Symbol)
-
-tab.trades <- cbind(
-  c("Trades","Win Percent","Loss Percent","W/L Ratio"),
-  c(tstats[,"Num.Trades"],tstats[,c("Percent.Positive","Percent.Negative")],
-    tstats[,"Percent.Positive"]/tstats[,"Percent.Negative"]))
-
-tab.profit <- cbind(
-  c("Net Profit","Gross Profits","Gross Losses","Profit Factor"),
-  c(tstats[,c("Net.Trading.PL","Gross.Profits","Gross.Losses",
-              "Profit.Factor")]))
-
-tab.wins <- cbind(
-  c("Avg Trade","Avg Win","Avg Loss","Avg W/L Ratio"),
-  c(tstats[,c("Avg.Trade.PL","Avg.Win.Trade","Avg.Losing.Trade",
-              "Avg.WinLoss.Ratio")]))
-
-suppressWarnings((trade.stats.tab <- data.frame(tab.trades,tab.profit,tab.wins)))
-suppressWarnings(View(trade.stats.tab))
-View(ob$myPortfolio)
-View(ts)
-
-
-myTheme<-NULL
-myTheme <- chart_theme()
-myTheme$col$dn.col<-'bisque4'
-myTheme$col$up.col <- 'coral3'
-chart.Posn(myPort,Symbol,theme=myTheme,TA = '') 
-
-add_TA(x = mktdata$up.TrendPoint.ind,on =1, col='cyan', lwd=2)
-add_TA(x = mktdata$down.TrendPoint.ind,on =1, col='coral', lwd=2)
-add_TA(x = mktdata$dash.TrendPoint.ind,on =1, col='pink', lwd=2)
-
-
-add_TA(x = mktdata$upR.TrendPoint.ind,on =1, col='cyan', lwd=2)
-add_TA(x = mktdata$downR.TrendPoint.ind,on =1, col='coral', lwd=2)
-
-
-waves<-generateWaves(s, r=r)
-trends <- generateTrends(s,waves = waves, r= r)
-trendLine <- getTrendLine(trends,s,range = range) 
-
-
-trends$startDate <- index(s)[trends$start]
-trends$breakDate <- index(s)[trends$breakPoint]
-trends$endDate <- index(s)[trends$end]
 
 # 
 # if(isDraw){

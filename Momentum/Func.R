@@ -126,3 +126,22 @@ getHistoryData<- function(x, f = '%d/%m/%Y %H:%M:%S')
   z<-read.zoo(x,format = f,header = TRUE,index.column = 1, sep = ',', FUN=as.POSIXct)
   return(as.xts(z))
 }
+
+ruleRevoke <- ruleCancel <- function(data=mktdata, timestamp, sigcol, sigval, orderside=NULL, orderset=NULL, portfolio, symbol, ruletype)
+{
+  if(ruletype!='risk') stop('Ruletype for ruleRevoke or ruleCancel must be "risk".')
+  
+  pos <- getPosQty(portfolio, symbol, timestamp)
+  if(pos == 0)
+  {
+    updateOrders(portfolio=portfolio, 
+                 symbol=symbol, 
+                 timespan=timespan,
+                 side=orderside,
+                 orderset=orderset, 
+                 oldstatus='open', 
+                 newstatus='revoked',
+                 statustimestamp=timestamp
+    )
+  }
+}

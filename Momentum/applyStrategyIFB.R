@@ -1,20 +1,23 @@
 require(PerformanceAnalytics)
 
 isDraw <- T
-range <- 0.0015
+range <- 0.002
 r <- 0.0015
-stopThreshold <- 0.002
-speedRatio <- 0.3
+stopThreshold <- 0.005
+speedRatio <- 0.2
 #import data
 path<- 'RawData//IFBQ4.csv'
 formate = '%d/%m/%Y %H:%M'
 # s<-getHistoryData(path, f ='%Y/%m/%d')
-s<-getHistoryData(path, f =formate) 
+IFBQ4<-getHistoryData(path, f =formate) 
+IFBQ4 <- IFBQ4[100:200,]
 txnFees <- 19
 
 #init portfolio
 require(blotter)
-Symbol<-'s'
+Symbol<-'IFBQ4'
+s<-get(Symbol)
+
 CNY <- 'CNY'
 currency(CNY)
 get(CNY,envir=FinancialInstrument:::.instrument)
@@ -45,10 +48,13 @@ strategy(name = myStrgy,store = T)
 ls(.strategy)
 strat <-getStrategy(myStrgy)
 summary(strat)
-add.indicator(strategy = myStrgy,name = 'TrendPoint',arguments = list(mkt = s, r = r, dayAdvance = 1, range = range, speedRatio=speedRatio))
+add.indicator(strategy = myStrgy,name = 'TrendPoint',arguments = list(mkt = s, r = r, dayAdvance = 0, range = range, speedRatio=speedRatio))
 
 #Short
 #Enter
+add.signal(strategy = myStrgy, name="sigComparison", 
+           arguments=list(columns=c('down.TrendPoint.ind','Close'), relationship="gte"),
+           label="underDown")
 add.signal(strategy = myStrgy, name="sigThreshold", 
            arguments=list(threshold = 1, column='shortPoint.TrendPoint.ind', relationship="eq"),
            label="shortSig")
@@ -56,22 +62,26 @@ add.signal(strategy = myStrgy, name="sigThreshold",
 add.signal(strategy = myStrgy, name="sigThreshold", 
            arguments=list(threshold = 1, column='shortInitPoint.TrendPoint.ind', relationship="eq"),
            label="shortInitSig")
+add.signal(strategy = myStrgy, name="sigThreshold", 
+           arguments=list(threshold = -1, column='shortPoint.TrendPoint.ind', relationship="eq"),
+           label="shortSig2")
 
-
+# add.signal(strategy = myStrgy, name="sigFormula", 
+#            arguments=list(formula="(shortInitSig | shortSig)",cross = F),
+#            label="shortBegin")
 add.signal(strategy = myStrgy, name="sigFormula", 
-           arguments=list(formula="(shortInitSig | shortSig)",cross = F),
+           arguments=list(formula="underDown & !shortSig2",cross = F),
            label="shortBegin")
 
 add.rule(strategy = myStrgy , name="ruleSignal",label = 'shortEntry', 
          arguments=list(sigcol="shortBegin", sigval=TRUE, orderqty='', 
-                        ordertype="market", 
+                        ordertype="limit", 
                         orderside="short",
-                        replace=FALSE, prefer="Close", osFUN = 'orderSizeIFB', TxnFees = 'getTxnFee'), 
+                        replace=T, prefer="downPrice.TrendPoint.ind", osFUN = 'orderSizeIFB',
+                        orderset ='ocoshort'), 
          type="enter")
 #Re Enter
-add.signal(strategy = myStrgy, name="sigComparison", 
-           arguments=list(columns=c('down.TrendPoint.ind','Close'), relationship="gte"),
-           label="underDown")
+
 add.signal(strategy = myStrgy, name="sigComparison", 
            arguments=list(columns=c('downR.TrendPoint.ind','Close'), relationship="lte"),
            label="aboveDownR")
@@ -84,13 +94,12 @@ add.rule(strategy = myStrgy , name="ruleSignal",label = 'shortEntry',
          arguments=list(sigcol="shortAgain", sigval=TRUE, orderqty='', 
                         ordertype="market", 
                         orderside="short",
-                        replace=FALSE, prefer="Close", osFUN = 'orderSizeIFB', TxnFees = 'getTxnFee'), 
+                        replace=T, prefer="Close", osFUN = 'orderSizeIFB',
+                        orderset ='ocoshort'), 
          type="enter")
 
 #Exit
-add.signal(strategy = myStrgy, name="sigThreshold", 
-           arguments=list(threshold = -1, column='shortPoint.TrendPoint.ind', relationship="eq"),
-           label="shortSig2")
+
 
 add.signal(strategy = myStrgy, name="sigThreshold", 
            arguments=list(threshold = -1, column='shortInitPoint.TrendPoint.ind', relationship="eq"),
@@ -111,7 +120,7 @@ add.rule(strategy = myStrgy, name="ruleSignal", label = 'shortExit', type="exit"
                         tmult= T,  
                         ordertype="market", 
                         prefer="Close",
-                        orderset ='ocoshort')        
+                        orderset ='ocoshort', TxnFees = 'getTxnFee')        
 )
 
 # Stop & Trailling
@@ -126,7 +135,7 @@ add.rule(strategy = myStrgy, name="ruleSignal", label = 'shortStop', type="chain
                         threshold= stopThreshold,
                         ordertype="stoplimit", 
                         prefer="Open",
-                        orderset ='ocoshort')         
+                        orderset ='ocoshort', TxnFees = 'getTxnFee')         
 )
 
 add.rule(strategy = myStrgy, name="ruleSignal", label = 'shorttrailing', type="chain", parent = 'shortEntry',
@@ -139,7 +148,7 @@ add.rule(strategy = myStrgy, name="ruleSignal", label = 'shorttrailing', type="c
                         threshold= stopThreshold,
                         ordertype="stoptrailing", 
                         prefer="Open",
-                        orderset ='ocoshort')        
+                        orderset ='ocoshort', TxnFees = 'getTxnFee')        
 )
 
 #long
@@ -152,21 +161,29 @@ add.signal(strategy = myStrgy, name="sigThreshold",
            arguments=list(threshold = 1, column='longInitPoint.TrendPoint.ind', relationship="eq"),
            label="longInitSig")
 
+add.signal(strategy = myStrgy, name="sigThreshold", 
+           arguments=list(threshold = -1, column='longPoint.TrendPoint.ind', relationship="eq"),
+           label="longSig2")
 
-add.signal(strategy = myStrgy, name="sigFormula", 
-           arguments=list(formula="(longInitSig | longSig)",cross = F),
-           label="longBegin")
-
-add.rule(strategy = myStrgy , name="ruleSignal",label = 'longEntry', 
-         arguments=list(sigcol="longBegin", sigval=TRUE, orderqty='', 
-                        ordertype="market", 
-                        orderside="long",
-                        replace=FALSE, prefer="Close", osFUN = 'orderSizeIFB', TxnFees = 'getTxnFee'), 
-         type="enter")
-#Re Enter
 add.signal(strategy = myStrgy, name="sigComparison", 
            arguments=list(columns=c('up.TrendPoint.ind','Close'), relationship="lte"),
            label="aboveUp")
+# 
+# add.signal(strategy = myStrgy, name="sigFormula", 
+#            arguments=list(formula="(longInitSig | longSig)",cross = F),
+#            label="longBegin")
+
+add.signal(strategy = myStrgy, name="sigFormula", 
+           arguments=list(formula="aboveUp & !longSig2",cross = F),
+           label="longBegin")
+add.rule(strategy = myStrgy , name="ruleSignal",label = 'longEntry', 
+         arguments=list(sigcol="longBegin", sigval=TRUE, orderqty='', 
+                        ordertype="limit", 
+                        orderside="long",
+                        replace=T, prefer="upPrice.TrendPoint.ind", osFUN = 'orderSizeIFB', orderset = 'ocolong'), 
+         type="enter")
+#Re Enter
+
 add.signal(strategy = myStrgy, name="sigComparison", 
            arguments=list(columns=c('upR.TrendPoint.ind','Close'), relationship="gte"),
            label="underUpR")
@@ -179,12 +196,10 @@ add.rule(strategy = myStrgy , name="ruleSignal",label = 'longEntry',
          arguments=list(sigcol="longAgain", sigval=TRUE, orderqty='', 
                         ordertype="market", 
                         orderside="long",
-                        replace=FALSE, prefer="Close", osFUN = 'orderSizeIFB', TxnFees = 'getTxnFee'), 
+                        replace=T, prefer="Close", osFUN = 'orderSizeIFB', orderset = 'ocolong'), 
          type="enter")
 #Exit
-add.signal(strategy = myStrgy, name="sigThreshold", 
-           arguments=list(threshold = -1, column='longPoint.TrendPoint.ind', relationship="eq"),
-           label="longSig2")
+
 
 add.signal(strategy = myStrgy, name="sigThreshold", 
            arguments=list(threshold = -1, column='longInitPoint.TrendPoint.ind', relationship="eq"),
@@ -205,7 +220,7 @@ add.rule(strategy = myStrgy, name="ruleSignal", label = 'longExit', type="exit",
                         tmult= T,  
                         ordertype="market", 
                         prefer="Close",
-                        orderset ='ocolong')        
+                        orderset ='ocolong', TxnFees = 'getTxnFee')        
 )
 
 # Stop & Trailling
@@ -220,7 +235,7 @@ add.rule(strategy = myStrgy, name="ruleSignal", label = 'longStop', type="chain"
                         threshold= stopThreshold,
                         ordertype="stoplimit", 
                         prefer="Open",
-                        orderset ='ocolong')         
+                        orderset ='ocolong', TxnFees = 'getTxnFee')         
 )
 
 add.rule(strategy = myStrgy, name="ruleSignal", label = 'longtrailing', type="chain", parent = 'longEntry',
@@ -233,7 +248,7 @@ add.rule(strategy = myStrgy, name="ruleSignal", label = 'longtrailing', type="ch
                         threshold= stopThreshold,
                         ordertype="stoptrailing", 
                         prefer="Open",
-                        orderset ='ocolong')        
+                        orderset ='ocolong', TxnFees = 'getTxnFee')        
 )
 
 
@@ -248,7 +263,13 @@ updateEndEq(myAcct)
 
 
 
-
+myTheme<-NULL
+myTheme <- chart_theme()
+myTheme$col$dn.col<-'bisque4'
+myTheme$col$dn.border <- 'bisque4'
+myTheme$col$up.col <- 'coral3'
+myTheme$col$up.border <- 'coral3'
+chart.Posn(myPort,Symbol,theme=myTheme,TA = '') 
 # 
 # if(isDraw){
 #   curves <- getWaveCurve(waves)

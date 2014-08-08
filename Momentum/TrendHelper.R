@@ -446,11 +446,10 @@ TrendPointIndicator <- function(trends, dLength, dayAdvance)
       {
         longInitPoint[breakPoint-dayAdvance] <- 1
         longInitPoint[end-dayAdvance] <- -1
-      }else
-      {
+      }
         longPoint[breakPoint-dayAdvance] <- 1
         longPoint[end-dayAdvance] <- -1
-      }
+        
     }else
     {
       
@@ -458,11 +457,12 @@ TrendPointIndicator <- function(trends, dLength, dayAdvance)
       {
         shortInitPoint[breakPoint-dayAdvance] <- 1
         shortInitPoint[end-dayAdvance] <- -1
-      }else
-      {
+      }
+      
         shortPoint[breakPoint-dayAdvance] <- 1
         shortPoint[end-dayAdvance] <- -1
-      }
+      
+      
     }
   }
   out <- cbind(longPoint, shortPoint,longInitPoint,shortInitPoint)
@@ -515,8 +515,10 @@ TrendLineIndicator <- function(trends,mkt,range, dayAdvance = 0)
   #  downTrendLine<-downTrendLine[!is.na(downTrendLine)]
   # names(dashLine) <- index(mkt)
   #  dashLine<-dashLine[!is.na(dashLine)]
-  out <- cbind(upTrendLine, downTrendLine,dashLine,upTrendLine*(1+range),downTrendLine*(1-range))
-  colnames(out) <- c("up", "down","dash",'upR','downR')
+  upPrice <- c((upTrendLine*(1+range))[2:length(upTrendLine)],NA)
+  downPrice <- c((downTrendLine*(1-range))[2:length(downTrendLine)],NA)
+  out <- cbind(upTrendLine, downTrendLine,dashLine,upTrendLine*(1+range),downTrendLine*(1-range),upPrice,downPrice)
+  colnames(out) <- c("up", "down","dash",'upR','downR','upPrice','downPrice')
  
   return (out)
 }
